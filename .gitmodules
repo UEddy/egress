@@ -7,3 +7,9 @@
 [submodule "contracts/lib/vault-v2"]
 	path = contracts/lib/vault-v2
 	url = https://github.com/morpho-org/vault-v2
+[submodule "crosscheck/lib/v3-core"]
+	path = crosscheck/lib/v3-core
+	url = https://github.com/Uniswap/v3-core
+[submodule "crosscheck/lib/forge-std"]
+	path = crosscheck/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

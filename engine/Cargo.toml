@@ -1,0 +1,29 @@
+[package]
+name = "exitline-engine"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Exitline depth engine: sellable proceeds in a Uniswap V3 pool within a price-impact bound (Arbitrum Stylus)."
+
+[dependencies]
+stylus-sdk = "=0.10.9"
+alloy-primitives = "=1.6.0"
+alloy-sol-types = "1"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+export-abi = ["stylus-sdk/export-abi"]
+contract-client-gen = []
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[profile.release]
+codegen-units = 1
+strip = true
+lto = true
+panic = "abort"
+opt-level = "s"
