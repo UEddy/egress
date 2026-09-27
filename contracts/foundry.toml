@@ -1,0 +1,22 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+solc_version = "0.8.28"
+evm_version = "cancun"
+via_ir = true
+optimizer = true
+optimizer_runs = 10000
+bytecode_hash = "none"
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "vault-v2/=lib/vault-v2/src/",
+]
+
+[fuzz]
+runs = 1024
+
+[rpc_endpoints]
+robinhood = "${ROBINHOOD_RPC_URL}"

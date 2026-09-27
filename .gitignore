@@ -1,0 +1,9 @@
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+engine/target/
+web/node_modules/
+web/dist/
+.env
+*.env
+!.env.example
