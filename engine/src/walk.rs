@@ -58,6 +58,29 @@ pub fn walk_to_limit<R: PoolReader>(
     zero_for_one: bool,
     limit: U256,
 ) -> Result<Walk, WalkError<R::Error>> {
+    walk_to_limit_bounded(pool, zero_for_one, limit, MAX_STEPS)
+}
+
+/// `sell_proceeds` with a caller-chosen step bound. Offchain tools use it to see past
+/// `MAX_STEPS`; the contract always uses `MAX_STEPS`.
+pub fn sell_proceeds_bounded<R: PoolReader>(
+    pool: &R,
+    stock_is_token0: bool,
+    impact_bps: u64,
+    max_steps: u32,
+) -> Result<Walk, WalkError<R::Error>> {
+    let (sqrt_price, _) = pool.slot0().map_err(WalkError::Read)?;
+    let limit = sqrt_price_limit(sqrt_price, stock_is_token0, impact_bps).ok_or(WalkError::BadImpact)?;
+    walk_to_limit_bounded(pool, stock_is_token0, limit, max_steps)
+}
+
+/// `walk_to_limit` with a caller-chosen step bound.
+pub fn walk_to_limit_bounded<R: PoolReader>(
+    pool: &R,
+    zero_for_one: bool,
+    limit: U256,
+    max_steps: u32,
+) -> Result<Walk, WalkError<R::Error>> {
     let (mut sqrt_price, mut tick) = pool.slot0().map_err(WalkError::Read)?;
     let mut liquidity = pool.liquidity().map_err(WalkError::Read)?;
     let spacing = pool.tick_spacing().map_err(WalkError::Read)?;
@@ -73,7 +96,7 @@ pub fn walk_to_limit<R: PoolReader>(
     let mut steps = 0u32;
 
     while sqrt_price != limit {
-        if steps == MAX_STEPS {
+        if steps == max_steps {
             return Ok(Walk { proceeds, complete: false, steps });
         }
         steps += 1;
