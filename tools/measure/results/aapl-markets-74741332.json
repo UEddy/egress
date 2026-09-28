@@ -1,0 +1,406 @@
+{
+  "chain_id": 4663,
+  "block": 74741332,
+  "timestamp": 1790592874,
+  "morpho_blue": "0x9d53d5e3bd5e8d4cbfa6db1ca238aea02e651010",
+  "collateral_token": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
+  "collateral_symbol": "AAPL",
+  "collateral_decimals": 18,
+  "markets_scanned": 286,
+  "markets": [
+    {
+      "id": "0x0d6e009807341aae5d0ccc3fbdc506fce77012603e96aec3fc44785942e7cf65",
+      "created_block": 18053475,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0x83b04e51d7db41928475272097cdb5f9bb0a48cf",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "2",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0xd621b5373890ce0be9b20ca17a75c57944e8dbb997172fd61e1ea48af63fad96",
+      "created_block": 22808465,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xdb7b3f39178e8b1ce48424047557c023b54f0c64",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "860000000000000000",
+      "total_supplied": "1001",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": [
+        {
+          "address": null,
+          "assets": "1000",
+          "kind": "other",
+          "vault": null,
+          "vault_name": null,
+          "curator": null,
+          "owner": null,
+          "v2_parents": []
+        },
+        {
+          "address": "0x18495599ad21588f6a58c556c895f520f57fb46c",
+          "assets": "0",
+          "kind": "vault_v2_adapter",
+          "vault": "0x5fe15021a7c0ff4a9965b400e474f616451ba128",
+          "vault_name": "Sharewoods RWA USDG",
+          "curator": "0x374ba83b81167176450fef1a4f07a9ec1d21db54",
+          "owner": "0x6f75b9102435352235dd7f4e1acff4ea4d5f2631",
+          "v2_parents": []
+        }
+      ]
+    },
+    {
+      "id": "0x01ab931866f6753d9246d451284c03d2b9cdf7f351120bc2e79045941777e7aa",
+      "created_block": 24443591,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xd209b6d73f7c1d196f768f419f500161ebd437e6",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "860000000000000000",
+      "total_supplied": "85742",
+      "total_borrowed": "77203",
+      "accrued": true,
+      "collateral": "400067285252489",
+      "borrowers": [
+        {
+          "debt": "77203",
+          "collateral": "400067285252489"
+        }
+      ],
+      "suppliers": [
+        {
+          "address": "0x18495599ad21588f6a58c556c895f520f57fb46c",
+          "assets": "85741",
+          "kind": "vault_v2_adapter",
+          "vault": "0x5fe15021a7c0ff4a9965b400e474f616451ba128",
+          "vault_name": "Sharewoods RWA USDG",
+          "curator": "0x374ba83b81167176450fef1a4f07a9ec1d21db54",
+          "owner": "0x6f75b9102435352235dd7f4e1acff4ea4d5f2631",
+          "v2_parents": []
+        }
+      ]
+    },
+    {
+      "id": "0x63c71d3a1afd71c674be55f07a27ad783edf20d63372111ae5b2e7162963b7ac",
+      "created_block": 32350325,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xbe230340e497e87b546f334711d8aaf82e48b853",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0x30a2a5f1a098b23ed91eadc4529a8d1c967f2cdc2e40a709f3a5992004b01ac0",
+      "created_block": 39456051,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xa88e71306db8f5d8ccb8ebcc95f8033caef8f7a2",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "25000771",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": [
+        {
+          "address": null,
+          "assets": "25000112",
+          "kind": "other",
+          "vault": null,
+          "vault_name": null,
+          "curator": null,
+          "owner": null,
+          "v2_parents": []
+        },
+        {
+          "address": "0xda803813cd8424e4643c7c912b98a6021616bd02",
+          "assets": "657",
+          "kind": "vault_v2_adapter",
+          "vault": "0x026df18fbd2a7639089d0a16293383ec687a5ca1",
+          "vault_name": "Longbow Core USDG",
+          "curator": "0xe600452658762042749eb8e11955542b7ebea4bb",
+          "owner": "0x396ae0bd5623c3750e15fd222770f1e972153ed4",
+          "v2_parents": []
+        },
+        {
+          "address": null,
+          "assets": "1",
+          "kind": "other",
+          "vault": null,
+          "vault_name": null,
+          "curator": null,
+          "owner": null,
+          "v2_parents": []
+        }
+      ]
+    },
+    {
+      "id": "0xe3813a231ef3c073d21615ab0a8788ebfae23e95e7e5571880c7619d5b05f404",
+      "created_block": 40894298,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xff1d77a191a338674ccf17af48f7f9384587e457",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "770000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0x6641d1333a00edf42f79b931554f1c81971656f18d881245f9547b471d5a49fb",
+      "created_block": 45975493,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xce96f48ee4404f06174e46f0d2020d2bc5d705c2",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "770000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0x3b788195cc0f5eb987e14d91d9b8875cf742c55faf9822ae25701f71a3ed7133",
+      "created_block": 53089335,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0x4f6185269ebcad4cfa0371d63b29d923956e60ac",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "385000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0x349f46c4c49ff76074e27a21fe49fd86511b06c764a6d46589ced02a40dc40d2",
+      "created_block": 54573451,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xb5034a0167655415ca08eb255f3b6c7e47c72ed2",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0x947ae981cc823024ea00b602f6ea72d049cac05d66ef096198ceeb998651c175",
+      "created_block": 58489230,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xc03399c6b3179859f0104be26aee6f20f83589f3",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "1003703",
+      "total_borrowed": "912703",
+      "accrued": true,
+      "collateral": "12674271229404308",
+      "borrowers": [
+        {
+          "debt": "912703",
+          "collateral": "12674271229404308"
+        }
+      ],
+      "suppliers": [
+        {
+          "address": null,
+          "assets": "1002700",
+          "kind": "other",
+          "vault": null,
+          "vault_name": null,
+          "curator": null,
+          "owner": null,
+          "v2_parents": []
+        },
+        {
+          "address": null,
+          "assets": "1002",
+          "kind": "other",
+          "vault": null,
+          "vault_name": null,
+          "curator": null,
+          "owner": null,
+          "v2_parents": []
+        }
+      ]
+    },
+    {
+      "id": "0xdeb4782d012d5fd3b24962538c2f6559049d70bda4dabd2e4212dacb96c28d45",
+      "created_block": 58919124,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xd625d488d552775d2867194c618b945e5ddfe097",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "215036561333",
+      "total_borrowed": "101052485879",
+      "accrued": true,
+      "collateral": "882769179961664142631",
+      "borrowers": [
+        {
+          "debt": "13470997",
+          "collateral": "78855727574129931"
+        },
+        {
+          "debt": "1001022",
+          "collateral": "6982686269808476"
+        },
+        {
+          "debt": "13395215",
+          "collateral": "79611514791038773"
+        },
+        {
+          "debt": "101002450605",
+          "collateral": "880000000000000000000"
+        },
+        {
+          "debt": "22168043",
+          "collateral": "115935348689794995"
+        }
+      ],
+      "suppliers": [
+        {
+          "address": "0xf0eef247585b184836915e80f984246d981c55c4",
+          "assets": "215036561332",
+          "kind": "vault_v2_adapter",
+          "vault": "0x99347d5f70d3838763f6bddcf80304c8aa953b57",
+          "vault_name": "NetNet Credit",
+          "curator": "0x3bb7a23316f82c0e984fa2e784846d8928a35f42",
+          "owner": "0x3bb7a23316f82c0e984fa2e784846d8928a35f42",
+          "v2_parents": []
+        }
+      ]
+    },
+    {
+      "id": "0x47baa250d10b6969d3177dfac9b1235f1fb32e35a0d52609d438c800bf3f09da",
+      "created_block": 65231063,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0x68c24d810ae6480c8c2e9b0d98d4fdeb35dc4a90",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0xcaa167af7ba0422c76424fae56167b7db25bf19f4f435215e6dd7d06a943bdac",
+      "created_block": 66586535,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0xa39f2c101bcc19ad5d0c7b83281f94a5ade2a344",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "1100",
+      "total_borrowed": "1000",
+      "accrued": true,
+      "collateral": "23640282548977",
+      "borrowers": [
+        {
+          "debt": "1000",
+          "collateral": "23640282548977"
+        }
+      ],
+      "suppliers": [
+        {
+          "address": null,
+          "assets": "1000",
+          "kind": "other",
+          "vault": null,
+          "vault_name": null,
+          "curator": null,
+          "owner": null,
+          "v2_parents": []
+        },
+        {
+          "address": "0x13880c60e9b7d27f55ac28530cdea6c201669f62",
+          "assets": "100",
+          "kind": "vault_v2_adapter",
+          "vault": "0xd0dace70434ff7567b108b5a8c2a36c150c830fe",
+          "vault_name": "Galaxy USDG Stock Tokens",
+          "curator": "0xa13094eced689b7419baba12851374424c1486f1",
+          "owner": "0x42d510edeb9257f8d920d5b9f5109d95cb22419d",
+          "v2_parents": []
+        }
+      ]
+    },
+    {
+      "id": "0x516829adb04c8351c09747755eed21f4514370e2df11a73c89054fef7de316bc",
+      "created_block": 72601542,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0x69190621e300cd2bc4cbb80777b517691ee80f65",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    },
+    {
+      "id": "0x3d9b0c04e374f7b50fa7a635393d2ecae23f45289e4e23f83793a6a611010918",
+      "created_block": 73454024,
+      "loan_token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "loan_symbol": "USDG",
+      "loan_decimals": 6,
+      "oracle": "0x88b628472e595725178cc3e5e2ec70ada67f80f0",
+      "irm": "0x2bd3d5965b26b51814ac95127b2b80dd6ccc0fa1",
+      "lltv_wad": "625000000000000000",
+      "total_supplied": "0",
+      "total_borrowed": "0",
+      "accrued": true,
+      "collateral": "0",
+      "borrowers": [],
+      "suppliers": []
+    }
+  ],
+  "blue_balance": "882798805761489262453",
+  "collateral_found": "882782277940461348405"
+}
