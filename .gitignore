@@ -2,6 +2,7 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/*/31337/
 engine/target/
+tools/measure/target/
 web/node_modules/
 web/dist/
 .env

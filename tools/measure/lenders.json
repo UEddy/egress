@@ -1,0 +1,185 @@
+{
+  "_comment": "Lending contracts that can hold stock tokens on Robinhood Chain. Root addresses only; tools/measure derives the rest onchain at the pinned block. Each protocol records where its roots came from.",
+  "protocols": [
+    {
+      "name": "Morpho Blue (canonical)",
+      "source": "morpho-org/sdks; Longbow and Robinhood Earn markets live here",
+      "holders": [
+        "0x9D53d5E3bd5E8d4Cbfa6DB1ca238AEA02E651010"
+      ]
+    },
+    {
+      "name": "Denar (Morpho Blue instance)",
+      "source": "Denar docs",
+      "holders": [
+        "0xf0A0a33729270586cDD66010B1cedE649745c3A5"
+      ]
+    },
+    {
+      "name": "LayerBank V3",
+      "source": "DefiLlama-Adapters projects/lineabank (Aave V3 pool data provider)",
+      "aave_v3_data_providers": [
+        "0x7ED03A856D52172f9501aB0176f184baD287e546"
+      ]
+    },
+    {
+      "name": "Ripe",
+      "source": "api.ripe.finance/api/chains/addresses (VaultBook, StabilityPool, Endaoment)",
+      "ripe_vault_books": [
+        "0x559E53F42b68b4995732Dba4aF300796761DBC19"
+      ],
+      "holders": [
+        "0xe238b50d79D566aa59A2deF4362a698eDC3dC395",
+        "0x9f20F25f037046721A292B19A486932ef390EAf9"
+      ]
+    },
+    {
+      "name": "Gage",
+      "source": "docs.gage.cash/protocol/addresses via DefiLlama-Adapters projects/gage/universe.json",
+      "holders": [
+        "0x3d979740785abd8b7dd5c2ff7bf100cbe86fcbdf",
+        "0xc23a08282aa1a9141c6fd7a29e7dfbfe841cc6b6",
+        "0xe3628a01eaca2e7b0ec71ed7ba616b997fef9cde",
+        "0x73efe72f500f01da3042a4bb03c647d200021bf5",
+        "0x4d52435086570d0a442320a843e0bfbef2a57f8c"
+      ],
+      "gage_engines": [
+        "0x22658055b70b8b09616b1e0953f2a51cc66cf493",
+        "0x08561c817a5bf5230f91c001800449f047e4c07d",
+        "0xfee799ade96229c2c128bc5ed9e55f8d9d01a7e9"
+      ]
+    },
+    {
+      "name": "Turret",
+      "source": "DefiLlama-Adapters projects/turret/config.js",
+      "holders": [
+        "0x24043E8EFaB262f5198B87b5AA5A46Bc72AADDD8",
+        "0xb9123E508bffEb32E0e7d5D2D8EE5917F54ccc63",
+        "0xEEE8622810616AC4A336B8cDb353D0Ddf11c884B",
+        "0xd76F143Bae0277Cc556D97ad978f18a0fdCd130e",
+        "0x7c1abcfe307c6575487e182D94b767f1FC49ED22",
+        "0x96714F255609381C75c1E88D08846D9eD229dC62",
+        "0x1916D155e580ff6f4A7724d630A27F2f12b6Eb85",
+        "0x6d13b38bb018f9fFdba625626e907210fb74421C",
+        "0xb41276421e5aE67C0c31b2B04bCFA0DeE4e62A33",
+        "0xe07EEd598ACb608c69802D00BaFea6A3926c7980",
+        "0x7b08E0E9520f3D4E2d59EF4EFc9db032E41399F8",
+        "0x8802c550b21C870dE29052CFAE5c719613440e87",
+        "0xf7a3dE21eced50bF0E439822273DA503Fe10C7B7",
+        "0x1a3656f815BBb53cBFaA7e9F63AA97c42324A2C9",
+        "0x072E65420C618Ce0aa5ac5628bE8Cf471E5F5b5B",
+        "0xEB39cd2bD899CF7A13B4e4b92050a56028e7473d",
+        "0x76224138d8057B970383c5A92d0C171EDf8ceb03",
+        "0xad34D8Ee4965672dd989808abbcAa35A8895bFE8",
+        "0x695171F8FC059A3B1F3e8d7a201C0271aD436B77",
+        "0xcAaC375E2d975359Bc5a8449eED9E281F359E234",
+        "0xe1E9cdAfDB792dF85C497F3752263d674105b0b4",
+        "0xEfCAaD33fb0E309eD021e2fe85342C2e58951b9F",
+        "0x37DF02D0D721aB8a351333052535B2b7F1262F36",
+        "0x8f4101368B25A5Ae2043891574BDDb8275572533",
+        "0xD49B1AF2f2e7e6340e8f419dAccCe68Ebb9378CD",
+        "0xD2157493950813849824Ba7f29d726d777037F2E",
+        "0x74AbbC9724039B07527a611714b82aDfc19A2eD8",
+        "0x73dB617B21b3E7Fd9056333902A1738463519DC8",
+        "0xf2948B3De193934A0b45bc34C57ff5E25BcDA558",
+        "0x067aC120ec0D6e879f4C40426385EA0Ac3d2Cd0A",
+        "0xFA125B8406ed76E25962a20C340FE19bf41d3179",
+        "0xee1f486Ea6827Cd9fB87c35629A05707FF13cc03",
+        "0x79CB40DF1aD78d0395290431e1f42324900180FB",
+        "0x128998305d895e2Eb4bF0F0AD0653a3F1D01762D",
+        "0xBF838a4D081CD323a75135F55D8F6Bf531EDB273",
+        "0x03A206E3E54ff3e570Bf144c79D05BDA1432a2de",
+        "0xdF4B6A4Fea65deE443F1dDeD9935f5aeB3627f11",
+        "0x4eACCE95247928487D500ad74A372D5bB607Cf03",
+        "0x9c5bCa4278E3A8d464945A1113D0645d9203463c",
+        "0x46d7e1a043A8a2fb4315FEa0AF1da8D498192F19",
+        "0x9abd97c7fA668dc92d9C9d15dAf870CE8c79a4A8",
+        "0x655e64DD4Dfdf5d79C1f92b5F524db4E296d2945",
+        "0x70EfbaA4336F2b51A1360C6E2fdd6150bEe40b39",
+        "0x6892b9C2777ad59ad3199EA5D0D54EEF725f5271",
+        "0xa71072C88c75B355a530569FAE22a7729fBd553A",
+        "0xe82750025Ea94ec9401658DCB6CB2b1c5F3cb925",
+        "0xCc8dA6DD324e998660eA503E582aB9dEE8655820",
+        "0x9023FB0cA32204EE4cCe39e3e664aaEF1cD0A418",
+        "0x27979092F64883E6322262862e30F914d284c971",
+        "0x8FeE2C05DC41765C4e3D550F1c33FAD6E679aA6a",
+        "0xC29907317d8e78E9f6455F22577361b5184b449e",
+        "0xe548566e61439E6c95231FD42c9F601257E24A4d",
+        "0x0029D5302e23BD56924F6047b385E6Dda114D3f4",
+        "0x3fA22c7FD391D1FCf682dfa64cb73f688cD7076C",
+        "0xc686015A9F64829A4015E66D174EAC1B58490c48",
+        "0x72dE275366E6579c2Da148e24Eef24a5143f14b8",
+        "0xD21Ac17FB08b56788C2c94e010F5f33190254810",
+        "0x1119e475d9a5609423e0b7aF4B1CcD7ef2c21034",
+        "0x1F10cf271f75a76E0698c9A02F20F88122891df2",
+        "0x2CEBccf207BFc929889dce41531eaBcf6A0cee11",
+        "0x0a4dd132f38345B4F134Cd660a9A513648F360f0",
+        "0xCA632493fE346183243C359676356Ffb6D5aF37B",
+        "0x24718Dd2970bBD1aA58AFd05223ca247Ce33c1cA",
+        "0xc79e3d2a66265c92e721def2162efdc21bdacfa7",
+        "0x41a381b4B5A98B330d4482F8a7b1469C2F63496e",
+        "0xed6f454080F32B3ff78F2bb048906E3dCC75f630",
+        "0x38e0deF753eCa9c98DEa1366eB48471866A4F610",
+        "0xAbe2e6019091f159835Bbc39529CDd1484befc6F",
+        "0x621fC38DbAf5B7e6DF0e43ccB1bDCEDbB246c57F",
+        "0xf9379ab2c2ae4C2eb02B55412d7c87D9077A3A39",
+        "0x703F9797cb31294ba583FfFB748A26f946E75515"
+      ],
+      "turret_v3_markets": [
+        "0xbcA2c4E897C7A988B0Aead0FBE92BCB87e190d25",
+        "0x0855f435bE9Fd3c1f42Bd773a130A5D61b0Cb6EB",
+        "0x34A9a43A5FF778B4015E24A16E963A0B5E6Cfd93",
+        "0x69c13ce4b28b936340Ce900fD35Ee5c799b7F7EC",
+        "0x781E21C6156f817aEFce9Fd868DdBc1aD226B23a",
+        "0xC373430223CF4559530D846E3aa46268FeC05851",
+        "0xA5059918bd0c4107E0EF6E634f7aee1BAF93940f",
+        "0x7945070E9Be31EE0fF192BD2F96B5bF1f417F0E2",
+        "0x8467cC58E4D3Fa3F48d6A522E2D119C2157Be6F2",
+        "0xA4de9578B8E94377420BF30e53D7dB7DBc8427B8",
+        "0x36dD2b90e8e8541CcAB1258465732c4e961A9657",
+        "0x17c1B3CaBc49a196Ec39B7BA8409226eDe756A20",
+        "0x9C1eC6c0C5Ff43307EaA58408ff9674A5D4d7D09",
+        "0xd41B87Ca091cbbf35dF36Aad9153d94248003163",
+        "0x795a763dD618f0A9868898143285B34AB0128DA8",
+        "0x24721aA5Aef309a984552ec8aF0d3b6827d51424",
+        "0xFf8908Fa2fDB92915a91B380769D24D119937145",
+        "0xd47A99bE3f5217eC525F3275DF298727CdaaC38B",
+        "0xd4F06D7Fb0fA388394ae010E59690d3B890A8451"
+      ]
+    },
+    {
+      "name": "Arcadia V2",
+      "source": "DefiLlama-Adapters projects/arcadia-finance-v2 (account factory)",
+      "arcadia_factories": [
+        "0xDa14Fdd72345c4d2511357214c5B89A919768e59"
+      ]
+    },
+    {
+      "name": "TermMax",
+      "source": "DefiLlama-Adapters projects/term-structure (FactoryV2 with deploy blocks)",
+      "termmax_factories": [
+        {
+          "address": "0x03c4FCF963E5FBC0dC5851d2340624E70492acb9",
+          "from_block": 21550658
+        },
+        {
+          "address": "0xF8F8D8E6f139841a30C8C3d6A2F656f195755Ceb",
+          "from_block": 25939853
+        }
+      ]
+    },
+    {
+      "name": "Native Credit Pool",
+      "source": "DefiLlama-Adapters projects/native-lend",
+      "holders": [
+        "0x57B8f68ef57Af2dB70BC9aAc891836661CA4cB51"
+      ]
+    }
+  ],
+  "not_covered": [
+    "Uniswap V3/V4 LP positions used as collateral (Arcadia accounts, Gage vaults and loan accounts hold position NFTs): the stock inside sits in the pool, not in the lender, so balanceOf does not see it and pool depth already includes it. Liquidating such a position withdraws that liquidity. DefiLlama unwraps these, which is why its Arcadia and Gage stock figures are higher.",
+    "Zona, Oter Finance, Kyros Finance: lending protocols listed on DefiLlama for Robinhood Chain whose adapter source is not public; no contract addresses found. DefiLlama showed under $30 of these stocks across all three on Sep 27, 2026.",
+    "Spine Finance: collateral is PT-NVDA-15OCT2026 (Pendle), not the NVDA token.",
+    "Uniswap V4 hooks, CEX and bridge custody are not lending contracts and are not counted."
+  ]
+}

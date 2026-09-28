@@ -1,0 +1,15 @@
+[package]
+name = "exitline-measure"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Measures Denar's stock markets onchain: USDG borrowed vs USDG sellable in Uniswap V3 within a price-impact bound."
+publish = false
+
+[dependencies]
+exitline-engine = { path = "../../engine" }
+alloy-primitives = { version = "=1.6.0", features = ["serde"] }
+alloy-sol-types = "=1.6.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
