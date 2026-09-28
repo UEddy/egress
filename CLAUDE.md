@@ -35,27 +35,58 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
     closed-market haircut.
   - `GuardFactory.sol`: deploys a guard for any Vault V2 vault. Deploying grants nothing until the
     vault owner calls `setIsSentinel(guard, true)`.
+- `tools/measure/` Rust CLI (reuses `engine::walk` over JSON-RPC, all reads pinned to one block).
+  Per Denar stock: USDG borrowed (interest accrued like Morpho), vault cap, collateral, and USDG
+  sellable across every Uniswap V3 stock/USDG fee tier within 5/10/20%. `--verify` runs each pool's
+  real `swap()` to the same limit inside `eth_call` (runtime code of `probe/SwapProbe.sol` injected
+  by state override) and fails unless the walk matches to the wei. `--json PATH` writes the report.
+  Also reports stock `balanceOf` held by every lending contract in `lenders.json` (roots with sources;
+  aTokens, vaults, loan/margin accounts, gearing tokens derived onchain), valued at the deepest
+  pool's spot price. Stocks and the lender scan run on parallel threads, all pinned to one block.
+  `markets <TOKEN>` lists every canonical Blue market with TOKEN as collateral: params, accrued
+  totals, borrower count, suppliers classified via the Vault V2 / adapter factory registries, and a
+  check that collateral over all positions equals `token.balanceOf(Blue)`.
+  JSON output never contains individual addresses: borrowers, non-vault suppliers and per-borrower
+  contracts (Arcadia accounts, Gage loan accounts, Turret offer vaults) are left out.
 - `crosscheck/` Solidity 0.7.6 project with real Uniswap v3-core. Builds pools, runs real swaps to
   price limits, writes `engine/fixtures/*.json`. The Rust tests replay them and require the engine
   to equal the real swap output **to the wei**.
 
-## Status (Sep 27, 2026)
+## Status (Sep 28, 2026)
 
 Done and passing:
 - Guard + factory: 31 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
 - Engine: 20 Rust tests. TickMath matches v3-core on 16 ticks; 24 real-swap cases match exactly.
 - Engine ABI export verified: `sellProceeds(address,bool,uint256) view returns (uint256)`.
+- `tools/measure` (Sep 27): run at block 74157078, snapshot in `tools/measure/results/`. 60 walks
+  equal the real swap to the wei; 3 are a pool pinned at MAX_SQRT_RATIO-1 (depth 0, swap cannot move).
+  Finding: Denar's 6 equity markets (NVDA, AAPL, MSFT, TSLA, SPY, QQQ; one each) have 20 to 317 USDG
+  borrowed and a 10,000 USDG vault cap each. Depth within 5% is 190k (AAPL) to 2.8M (NVDA) USDG, so
+  borrows are 600x+ below depth today and caps 19x+ below it. The guard would not cut anything now.
+  The onchain engine's 128-step bound undercounts NVDA at 20% by ~2.5% (194 steps needed).
+- Lender inventory (block 74197325, `results/denar-74197325.json`): 273 holder contracts across 9
+  protocols hold ~$660k of the six stocks. Canonical Morpho Blue holds ~$609k of it (AAPL $301k,
+  NVDA $299k); then Native Credit Pool $22k, Gage $15k, Ripe $8k, TermMax $2.7k, Denar $2k,
+  LayerBank $84, Arcadia $9, Turret 0. Matches DefiLlama except where DefiLlama unwraps Uniswap LP
+  NFTs held as collateral (Arcadia, Gage): that stock sits in the pool, not the lender. Not covered:
+  Zona, Oter, Kyros (no public addresses, < $30), Spine (collateral is PT-NVDA, not NVDA).
+  AAPL held by all lenders ($301k) exceeds AAPL sellable within 5% (~195k USDG).
+- AAPL on canonical Blue (block 74741332, `results/aapl-markets-74741332.json`): 15 of 286 markets
+  take AAPL, all lending USDG; one matters. Market 0xdeb4782d012d5fd3b24962538c2f6559049d70bda4dabd2e4212dacb96c28d45
+  (LLTV 62.5%, oracle 0xD625d488D552775D2867194C618B945E5dDfE097): 215,037 USDG supplied, 101,052
+  borrowed (47% utilization), 5 borrowers, 882.77 AAPL collateral. Nearly all of it is one position
+  at 33.7% LTV that liquidates after a 46% AAPL fall. The only supplier is the NetNet Credit Vault V2.
+  Other AAPL markets hold at most 25 USDG. No MetaMorpho V1 vault supplies any AAPL market.
+  `AAPL.balanceOf(Blue)` exceeds all positions by exactly 0.016527821027914048 AAPL: 80 direct
+  transfers from contract 0x39adb8acd07427d338b5f1afab436a04abfdb7c4 with no Blue event (purpose
+  unconfirmed; looks like dividend-style payouts). No position owns it.
 
 Not done (in order):
-1. `tools/measure`: local Rust CLI reusing `engine` walk over JSON-RPC. For each Denar stock market:
-   total USDG borrowed vs USDG sellable within 5/10/20%. Collateral total per Morpho Blue instance =
-   `stock.balanceOf(morphoBlue)`. Denar's equity vault is MetaMorpho V1: read `supplyQueue` for market
-   ids, then Blue `idToMarketParams` and `market`. Verify every token's `symbol()` onchain. Discover
-   USDG from the NVDA/USDG pool's token0/token1. This is the PMF evidence: do it before building more.
 2. Build the engine to wasm and `cargo stylus check` against Robinhood Chain.
 3. Deploy engine, factory, a demo Vault V2 (via the official factory) and a guard on mainnet.
 4. Dashboard (deployed frontend, required by the submission form).
-5. Outreach to Denar: ask them to add the guard as a sentinel on their Vault V2 vault.
+5. Outreach: ask Vault V2 curators to add the guard as a sentinel. Candidates: Denar dnUSDG2 and
+   the four Vault V2 stock vaults below; NetNet Credit first (sole lender to the main AAPL market).
 
 Stretch: sentinel `deallocate`; Uniswap V4 pools via StateView.
 
@@ -75,10 +106,28 @@ Stretch: sentinel `deallocate`; Uniswap V4 pools via StateView.
 | Denar USDG vault (MetaMorpho V1, equity) | 0xF0E6AD006080c48766ddb95b8c568D72bC059050 | Denar docs |
 | Denar dnUSDG2 (Vault V2, canonical Blue) | 0x338b2f252dae1deb00Afb700128e592a19F8918c | Denar docs |
 
-Unverified (from a third-party crate, check with `cast` before use): AAPL 0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9,
+Vault V2 vaults supplying AAPL markets on canonical Blue (all registered in the Vault V2 factory;
+names are self-chosen by each vault, curators are onchain addresses only, Morpho's API lists none):
+
+| Vault V2 | Address | Curator | Owner |
+|---|---|---|---|
+| NetNet Credit | 0x99347d5F70D3838763f6Bddcf80304C8aa953B57 | 0x3Bb7A23316f82C0e984fA2E784846d8928a35f42 | same as curator |
+| Sharewoods RWA USDG | 0x5FE15021a7C0Ff4A9965b400E474f616451BA128 | 0x374ba83b81167176450FEF1a4F07a9eC1D21dB54 | 0x6f75b9102435352235Dd7f4E1ACff4Ea4d5F2631 |
+| Longbow Core USDG | 0x026df18fbd2A7639089D0a16293383ec687A5Ca1 | 0xe600452658762042749eb8e11955542B7EBeA4Bb | 0x396ae0BD5623c3750e15fd222770F1e972153ED4 |
+| Galaxy USDG Stock Tokens | 0xd0dACE70434fF7567b108B5a8c2a36C150C830FE | 0xA13094eCEd689b7419BAbA12851374424c1486f1 | 0x42D510eDeb9257f8D920d5B9f5109D95cB22419d |
+
+Other Morpho contracts (morpho-org/sdks): MorphoVaultV1Adapter factory 0x7a91222F3f7B927bB8fb624593Ca86e111C2F85e.
+There is no official MetaMorpho V1 factory on Robinhood Chain; V1 vaults are identified by interface.
+
+Stock tokens (addresses first seen in a third-party crate): AAPL 0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9,
 MSFT 0xe93237C50D904957Cf27E7B1133b510C669c2e74, QQQ 0xD5f3879160bc7c32ebb4dC785F8a4F505888de68,
 SPY 0x117cc2133c37B721F49dE2A7a74833232B3B4C0C, TSLA 0x322F0929c4625eD5bAd873c95208D54E1c003b2d.
-USDG address: not yet confirmed. Chainlink stock feed addresses: not yet confirmed.
+The five addresses above are the collateral of Denar's equity markets and their `symbol()` matches
+onchain (checked by `tools/measure`). USDG is 0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168 (6 decimals),
+token0 of the NVDA/USDG pool, symbol checked. Chainlink stock feed addresses: not yet confirmed.
+Public RPC: https://rpc.mainnet.chain.robinhood.com. Rate limited (JSON-RPC batches of 20 pass,
+100 do not) and not an archive node: it keeps state for roughly 4,000-8,000 blocks (~7-13 min), so a
+pinned-block run must finish inside that window. A full `--verify` run with lenders takes ~4.5 min.
 
 Denar's equity vault is MetaMorpho V1, which has no sentinel role. Exitline supports Vault V2 only.
 Do not design around holding a curator role.
@@ -93,6 +142,9 @@ cd ../engine && cargo test
 rustup target add wasm32-unknown-unknown && cargo install cargo-stylus
 cargo stylus check --endpoint "$ROBINHOOD_RPC_URL"
 cargo run --features export-abi         # prints the Solidity ABI
+cd ../tools/measure && cargo run --release -- --verify --json results/denar-<block>.json
+cargo run --release -- markets AAPL --json results/aapl-markets-<block>.json
+# regenerate probe/SwapProbe.runtime.hex: solc 0.8.28, optimizer 200 runs, evm cancun, deployedBytecode
 ```
 
 ## Rules for this repo
@@ -102,4 +154,6 @@ cargo run --features export-abi         # prints the Solidity ABI
 - Verify addresses and facts against primary sources before relying on them.
 - Fresh deployer key used only for this project. Never commit keys or `.env`.
 - No Claude attribution lines in commits.
+- Never commit an individual's address (borrowers, non-vault suppliers, per-borrower accounts), in
+  CLAUDE.md, results or anywhere else. Protocol contracts, vaults and curators are fine.
 - All code is written inside the buildathon window (opened Sep 14, 2026). Keep history honest.
