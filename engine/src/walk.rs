@@ -11,7 +11,10 @@ use crate::math::{
 /// Upper bound on loop iterations. Each iteration costs at most one bitmap read and one tick
 /// read. If the bound is hit, the walk stops and reports what it has counted so far, which is
 /// less than the true depth. Never more.
-pub const MAX_STEPS: u32 = 128;
+///
+/// 256 covers the densest pool measured on Robinhood Chain: the NVDA/USDG 0.05% pool needed 194
+/// steps for a 20% move (tools/measure, block 74157078), which 128 cut short by ~2.5%.
+pub const MAX_STEPS: u32 = 256;
 
 /// Read access to the pool state the walk needs. Implemented over live contract calls in the
 /// Stylus entrypoint and over in-memory fixtures in tests.
@@ -351,6 +354,44 @@ mod tests {
         let exact_upper = amount1_delta_down(p.sqrt_price, limit, 2 * L).unwrap();
         assert!(w.proceeds <= exact_upper);
         assert!(floor.complete);
+    }
+
+    #[test]
+    fn dense_nvda_style_ranges_complete_within_the_bound() {
+        // Shape of the NVDA/USDG 0.05% pool: spacing 10 with a position edge at every spacing
+        // tick below the price, so a 20% fall (~2,232 ticks) crosses ~223 initialized ticks.
+        // Each range ends above the price, so liquidity thins out as the price falls.
+        let spacing = 10;
+        let mut p = MemPool::new(0, spacing);
+        let edges = 240;
+        for k in 1..=edges {
+            p.add_position(-k * spacing, spacing, L / 100);
+        }
+        let w = sell_proceeds(&p, true, 2000).unwrap();
+        assert!(w.complete, "walk stopped at {} steps", w.steps);
+        assert!(w.steps > 128 && w.steps <= MAX_STEPS, "steps {}", w.steps);
+
+        // The old bound of 128 would have stopped early and reported strictly less.
+        let short = sell_proceeds_bounded(&p, true, 2000, 128).unwrap();
+        assert!(!short.complete && short.proceeds < w.proceeds);
+
+        // Independent sum: one segment per initialized tick, each rounded down like the walk.
+        let limit = sqrt_price_limit(p.sqrt_price, true, 2000).unwrap();
+        let mut expected = U256::ZERO;
+        let mut upper = p.sqrt_price;
+        let mut liquidity = p.liquidity;
+        for k in 1..=edges {
+            let edge = sqrt_ratio_at_tick(-k * spacing).unwrap();
+            let lower = if edge < limit { limit } else { edge };
+            expected += amount1_delta_down(upper, lower, liquidity).unwrap();
+            if lower == limit {
+                break;
+            }
+            upper = edge;
+            liquidity -= L / 100;
+        }
+        assert!(limit > sqrt_ratio_at_tick(-edges * spacing).unwrap(), "limit must fall inside the ranges");
+        assert_eq!(w.proceeds, expected);
     }
 
     #[test]
