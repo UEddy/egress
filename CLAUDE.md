@@ -55,8 +55,24 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
 ## Status (Sep 28, 2026)
 
 Done and passing:
-- Guard + factory: 31 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
-- Engine: 20 Rust tests. TickMath matches v3-core on 16 ticks; 24 real-swap cases match exactly.
+- Guard + factory: 41 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
+  Engine gas budget (Sep 29): each engine call gets exactly `engineGasLimit` (immutable, set via the
+  factory, bounded to 100k..3.5M); `record`/`preview` revert `InsufficientGas` unless gasleft() covers
+  every pool's budget + 1/63 + call cost + `RECORD_GAS_OVERHEAD` (250k), so a failed pool always
+  failed within its full budget. Keepers size calls with `gasRequired(stock)`. Worst case at the
+  minimum accepted gas (every pool burning its full budget, cut through real Vault V2) leaves
+  ~195k unused. `StepEngine` (test/mocks) burns steps × gasPerStep for calibration.
+- Fork simulation (Sep 29, `contracts/test/fork/NetNetAaplFork.t.sol` via
+  `contracts/script/fork-netnet-aapl.sh`): guard on the real NetNet Credit Vault V2 (owner
+  impersonated on the fork only), mock engine returning tools/measure's AAPL depth at the fork
+  block. At block 75821799 the AAPL cap went 600,000 -> 68,336 USDG after 5 readings (median, 50%
+  of ~137k depth within 5%); the guard could not raise it; the curator restored it after the 3-day
+  timelock. The new cap is below the current AAPL allocation (197k): a cut only blocks new lending.
+- Engine: 22 Rust tests. TickMath matches v3-core on 16 ticks; 24 real-swap cases match exactly.
+  MAX_STEPS is 256 (NVDA/USDG needed 194 at 20%). Square root is integer-only: `ruint`'s `root()`
+  uses f64, which Stylus rejects at activation. Toolchain pinned to Rust 1.91.0.
+- `cargo stylus check` passes on Robinhood Chain mainnet (Sep 28): 23,076 bytes compressed (under
+  24 KB, one fragment), 73,536 uncompressed, activation data fee 0.000120 ETH (incl. 20% bump).
 - Engine ABI export verified: `sellProceeds(address,bool,uint256) view returns (uint256)`.
 - `tools/measure` (Sep 27): run at block 74157078, snapshot in `tools/measure/results/`. 60 walks
   equal the real swap to the wei; 3 are a pool pinned at MAX_SQRT_RATIO-1 (depth 0, swap cannot move).
@@ -82,7 +98,11 @@ Done and passing:
   unconfirmed; looks like dividend-style payouts). No position owns it.
 
 Not done (in order):
-2. Build the engine to wasm and `cargo stylus check` against Robinhood Chain.
+2. TODO before deploying any guard: set `engineGasLimit` from a measurement of the *deployed*
+   engine on mainnet: gas of a 256-step walk (a dense pool at the max impact bound) plus a 50%
+   margin. Do not pick it from mocks. Calibrate StepEngine's gasPerStep from the same measurement.
+   If the result exceeds MAX_ENGINE_GAS (3.5M), lower MAX_POOLS and raise the ceiling together.
+   Also confirm Robinhood Chain's per-transaction gas limit (the 3.5M ceiling assumes Nitro's 32M).
 3. Deploy engine, factory, a demo Vault V2 (via the official factory) and a guard on mainnet.
 4. Dashboard (deployed frontend, required by the submission form).
 5. Outreach: ask Vault V2 curators to add the guard as a sentinel. Candidates: Denar dnUSDG2 and
@@ -144,6 +164,8 @@ cargo stylus check --endpoint "$ROBINHOOD_RPC_URL"
 cargo run --features export-abi         # prints the Solidity ABI
 cd ../tools/measure && cargo run --release -- --verify --json results/denar-<block>.json
 cargo run --release -- markets AAPL --json results/aapl-markets-<block>.json
+cargo run --release -- --only AAPL --impacts 500 --no-lenders   # one stock, one bound, fast
+cd ../.. && contracts/script/fork-netnet-aapl.sh   # measure + fork test at the same block (~30 s)
 # regenerate probe/SwapProbe.runtime.hex: solc 0.8.28, optimizer 200 runs, evm cancun, deployedBytecode
 ```
 
