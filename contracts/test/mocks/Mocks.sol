@@ -78,3 +78,35 @@ contract MockEngine is IDepthEngine {
         return proceeds[pool];
     }
 }
+
+/// @dev Engine whose cost scales with a configurable step count, to stand in for the real walk
+/// (one step = one tick crossing) when sizing `engineGasLimit`. Each step burns `gasPerStep`,
+/// so a call costs about steps × gasPerStep. Calibrate gasPerStep from the deployed engine.
+contract StepEngine is IDepthEngine {
+    uint256 public steps;
+    uint256 public gasPerStep;
+    uint256 public proceedsPerPool;
+
+    function set(uint256 _steps, uint256 _gasPerStep, uint256 _proceeds) external {
+        steps = _steps;
+        gasPerStep = _gasPerStep;
+        proceedsPerPool = _proceeds;
+    }
+
+    function sellProceeds(address, bool, uint256) external view returns (uint256) {
+        uint256 n = steps;
+        uint256 per = gasPerStep;
+        bytes32 h;
+        for (uint256 i; i < n; ++i) {
+            // Past the budget this runs out of gas rather than reverting early, so an
+            // over-budget call really consumes everything it was given.
+            uint256 left = gasleft();
+            uint256 stop = left > per ? left - per : 0;
+            while (gasleft() > stop) {
+                h = keccak256(abi.encode(h, i));
+            }
+        }
+        // Keep the work observable so the optimizer cannot drop the loop.
+        return h == bytes32(uint256(1)) ? 0 : proceedsPerPool;
+    }
+}

@@ -16,7 +16,9 @@ contract GuardFactory {
     mapping(address guard => bool) public isGuard;
     mapping(address vault => address[]) internal _guardsByVault;
 
-    event GuardCreated(address indexed guard, address indexed vault, address indexed owner, uint64 minGap);
+    event GuardCreated(
+        address indexed guard, address indexed vault, address indexed owner, uint64 minGap, uint256 engineGasLimit
+    );
 
     error ZeroAddress();
 
@@ -25,13 +27,16 @@ contract GuardFactory {
         engine = _engine;
     }
 
-    /// @notice Deploys a guard for `vault`, owned by `owner`.
-    function createGuard(IVaultV2Minimal vault, address owner, uint64 minGap) external returns (ExitlineGuard guard) {
+    /// @notice Deploys a guard for `vault`, owned by `owner`, giving each engine call `engineGasLimit`.
+    function createGuard(IVaultV2Minimal vault, address owner, uint64 minGap, uint256 engineGasLimit)
+        external
+        returns (ExitlineGuard guard)
+    {
         if (owner == address(0)) revert ZeroAddress();
-        guard = new ExitlineGuard(owner, vault, engine, minGap);
+        guard = new ExitlineGuard(owner, vault, engine, minGap, engineGasLimit);
         isGuard[address(guard)] = true;
         _guardsByVault[address(vault)].push(address(guard));
-        emit GuardCreated(address(guard), address(vault), owner, minGap);
+        emit GuardCreated(address(guard), address(vault), owner, minGap, engineGasLimit);
     }
 
     function guardsByVault(address vault) external view returns (address[] memory) {

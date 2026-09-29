@@ -19,6 +19,11 @@ import {IVaultV2Minimal, IUniswapV3PoolTokens, IStockToken, IAggregatorV3} from 
 /// Recording is keeper-gated because pool liquidity can be added and removed inside one
 /// transaction; letting anyone record at a moment of their choosing would let an attacker fill
 /// the window with manipulated readings.
+///
+/// Every engine call gets exactly `engineGasLimit`, and `record` and `preview` refuse to start
+/// unless the caller supplied enough gas for every pool's full budget plus the work after it. So a
+/// pool counted as failed always failed within its full budget; a keeper cannot starve the engine
+/// (or the cap cut) to push a reading down or up.
 contract ExitlineGuard is Ownable2Step {
     /* CONSTANTS */
 
@@ -28,6 +33,17 @@ contract ExitlineGuard is Ownable2Step {
     uint256 public constant MAX_IMPACT_BPS = 5_000;
     uint64 public constant MIN_GAP_FLOOR = 60;
     uint64 public constant MIN_GAP_CEILING = 1 days;
+
+    /// @dev Bounds on the per-pool engine budget. The ceiling keeps a full measurement
+    /// (MAX_POOLS × (budget + 1/63 + call cost) + overhead) under the 32M per-transaction gas
+    /// limit of Arbitrum Nitro chains.
+    uint256 public constant MIN_ENGINE_GAS = 100_000;
+    uint256 public constant MAX_ENGINE_GAS = 3_500_000;
+    /// @dev Per pool, on top of the budget: cold account access, call base cost, ABI work.
+    uint256 public constant ENGINE_CALL_GAS = 10_000;
+    /// @dev Everything outside the engine calls: config and pool reads, the oracle read, the
+    /// reading's storage writes, the median, and the vault cap read and cut.
+    uint256 public constant RECORD_GAS_OVERHEAD = 250_000;
 
     /* TYPES */
 
@@ -63,6 +79,8 @@ contract ExitlineGuard is Ownable2Step {
     address public immutable asset;
     IDepthEngine public immutable engine;
     uint64 public immutable minGap;
+    /// @notice Gas given to each engine call.
+    uint256 public immutable engineGasLimit;
 
     /* STORAGE */
 
@@ -91,18 +109,25 @@ contract ExitlineGuard is Ownable2Step {
     error PoolMismatch();
     error DuplicatePool();
     error NoCorporateAction();
+    error InsufficientGas(uint256 required, uint256 available);
 
     /* CONSTRUCTOR */
 
-    constructor(address initialOwner, IVaultV2Minimal _vault, IDepthEngine _engine, uint64 _minGap)
-        Ownable(initialOwner)
-    {
+    constructor(
+        address initialOwner,
+        IVaultV2Minimal _vault,
+        IDepthEngine _engine,
+        uint64 _minGap,
+        uint256 _engineGasLimit
+    ) Ownable(initialOwner) {
         if (address(_vault) == address(0) || address(_engine) == address(0)) revert ZeroAddress();
         if (_minGap < MIN_GAP_FLOOR || _minGap > MIN_GAP_CEILING) revert BadParameter();
+        if (_engineGasLimit < MIN_ENGINE_GAS || _engineGasLimit > MAX_ENGINE_GAS) revert BadParameter();
         vault = _vault;
         asset = _vault.asset();
         engine = _engine;
         minGap = _minGap;
+        engineGasLimit = _engineGasLimit;
     }
 
     /* MODIFIERS */
@@ -168,6 +193,7 @@ contract ExitlineGuard is Ownable2Step {
     /// @notice Measures the stock's current safe cap, stores it, and cuts the vault cap once
     /// WINDOW readings exist and their median is below the current cap.
     function record(address stock) external onlyKeeper returns (uint256 target) {
+        _requireGas(stock);
         Config memory cfg = _config[stock];
         if (!cfg.enabled) revert NotEnabled();
 
@@ -230,9 +256,19 @@ contract ExitlineGuard is Ownable2Step {
 
     /// @notice What `record` would store right now, without storing it.
     function preview(address stock) external view returns (uint256 target, bool closed, uint256 failedPools) {
+        _requireGas(stock);
         Config memory cfg = _config[stock];
         if (!cfg.enabled) revert NotEnabled();
         return _measure(stock, cfg);
+    }
+
+    /// @notice Minimum gasleft() at entry for `record` and `preview` on this stock. Keepers should
+    /// send at least this much plus the transaction's intrinsic cost.
+    function gasRequired(address stock) public view returns (uint256) {
+        uint256 n = _pools[stock].length;
+        // EIP-150: a call receives at most 63/64 of the gas left, so reserve a 64th on top.
+        uint256 perPool = engineGasLimit + (engineGasLimit + 62) / 63 + ENGINE_CALL_GAS;
+        return n * perPool + RECORD_GAS_OVERHEAD;
     }
 
     function corporateActionPending(address stock) external view returns (bool) {
@@ -240,6 +276,12 @@ contract ExitlineGuard is Ownable2Step {
     }
 
     /* INTERNAL */
+
+    function _requireGas(address stock) internal view {
+        uint256 required = gasRequired(stock);
+        uint256 available = gasleft();
+        if (available < required) revert InsufficientGas(required, available);
+    }
 
     function _measure(address stock, Config memory cfg)
         internal
@@ -250,8 +292,11 @@ contract ExitlineGuard is Ownable2Step {
         uint256 depth;
         for (uint256 i; i < refs.length; ++i) {
             PoolRef memory ref = refs[i];
-            // A pool the engine cannot read counts as zero depth: failing safe means cutting, not ignoring.
-            try engine.sellProceeds(ref.pool, ref.stockIsToken0, cfg.maxImpactBps) returns (uint256 proceeds) {
+            // A pool the engine cannot read within its budget counts as zero depth: failing safe
+            // means cutting, not ignoring. The entry gas check guarantees the full budget here.
+            try engine.sellProceeds{gas: engineGasLimit}(ref.pool, ref.stockIsToken0, cfg.maxImpactBps) returns (
+                uint256 proceeds
+            ) {
                 depth += proceeds > type(uint128).max ? type(uint128).max : proceeds;
             } catch {
                 ++failed;

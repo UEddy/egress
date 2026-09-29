@@ -12,7 +12,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ExitlineGuard} from "../src/ExitlineGuard.sol";
 import {GuardFactory} from "../src/GuardFactory.sol";
 import {IVaultV2Minimal} from "../src/interfaces/IExternal.sol";
-import {MockERC20, MockStockToken, MockPool, MockFeed, MockEngine} from "./mocks/Mocks.sol";
+import {MockERC20, MockStockToken, MockPool, MockFeed, MockEngine, StepEngine} from "./mocks/Mocks.sol";
 
 contract ExitlineGuardTest is Test {
     address owner = makeAddr("vaultOwner");
@@ -22,6 +22,7 @@ contract ExitlineGuardTest is Test {
     address stranger = makeAddr("stranger");
 
     uint64 constant GAP = 10 minutes;
+    uint256 constant ENGINE_GAS = 1_000_000;
     uint256 constant START_CAP = 1_000_000e6;
 
     MockERC20 usdg;
@@ -50,7 +51,7 @@ contract ExitlineGuardTest is Test {
         vault.setCurator(curator);
 
         factory = new GuardFactory(engine);
-        guard = factory.createGuard(IVaultV2Minimal(address(vault)), guardOwner, GAP);
+        guard = factory.createGuard(IVaultV2Minimal(address(vault)), guardOwner, GAP, ENGINE_GAS);
 
         vm.prank(owner);
         vault.setIsSentinel(address(guard), true);
@@ -111,9 +112,9 @@ contract ExitlineGuardTest is Test {
 
     function test_constructorRejectsBadGap() public {
         vm.expectRevert(ExitlineGuard.BadParameter.selector);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 59);
+        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 59, ENGINE_GAS);
         vm.expectRevert(ExitlineGuard.BadParameter.selector);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 1 days + 1);
+        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 1 days + 1, ENGINE_GAS);
     }
 
     function test_configureDerivesTokenOrder() public view {
@@ -395,5 +396,136 @@ contract ExitlineGuardTest is Test {
         uint256 expected = targets[2] < START_CAP ? targets[2] : START_CAP;
         assertEq(_cap(), expected);
         assertLe(_cap(), START_CAP);
+    }
+
+    /* ENGINE GAS BUDGET */
+
+    /// @dev A guard on the same vault whose engine is a StepEngine, configured like `guard`.
+    function _stepGuard(uint256 engineGas) internal returns (ExitlineGuard g, StepEngine e) {
+        e = new StepEngine();
+        g = new GuardFactory(e).createGuard(IVaultV2Minimal(address(vault)), guardOwner, GAP, engineGas);
+        vm.prank(owner);
+        vault.setIsSentinel(address(g), true);
+        vm.startPrank(guardOwner);
+        g.setKeeper(keeper, true);
+        g.configure(address(nvda), _config(), _pools());
+        vm.stopPrank();
+    }
+
+    /// @dev Smallest gas a keeper can send to `record` (or anyone to `preview`) that passes the
+    /// entry check: probe with gasRequired, then add the shortfall the revert reports. Gas used
+    /// before the check is deterministic, so this is the exact threshold.
+    function _minimumGas(ExitlineGuard g, bool isRecord) internal returns (uint256) {
+        uint256 need = g.gasRequired(address(nvda));
+        bytes memory data = isRecord
+            ? abi.encodeCall(ExitlineGuard.record, (address(nvda)))
+            : abi.encodeCall(ExitlineGuard.preview, (address(nvda)));
+        if (isRecord) vm.prank(keeper);
+        (bool ok, bytes memory ret) = address(g).call{gas: need}(data);
+        require(!ok && bytes4(ret) == ExitlineGuard.InsufficientGas.selector, "probe did not hit the gas check");
+        (uint256 required, uint256 available) = abi.decode(_tail(ret), (uint256, uint256));
+        return need + (required - available);
+    }
+
+    function _tail(bytes memory ret) internal pure returns (bytes memory out) {
+        out = new bytes(ret.length - 4);
+        for (uint256 i; i < out.length; ++i) {
+            out[i] = ret[i + 4];
+        }
+    }
+
+    function test_constructorBoundsEngineGas() public {
+        uint256 lo = guard.MIN_ENGINE_GAS();
+        uint256 hi = guard.MAX_ENGINE_GAS();
+        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, lo - 1);
+        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, hi + 1);
+        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, lo);
+        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, hi);
+    }
+
+    function test_factoryPassesEngineGasLimit() public view {
+        assertEq(guard.engineGasLimit(), ENGINE_GAS);
+    }
+
+    function test_worstCaseFitsInTransactionGasLimit() public view {
+        uint256 perPool = guard.MAX_ENGINE_GAS() + (guard.MAX_ENGINE_GAS() + 62) / 63 + guard.ENGINE_CALL_GAS();
+        assertLe(guard.MAX_POOLS() * perPool + guard.RECORD_GAS_OVERHEAD(), 32_000_000);
+    }
+
+    function test_gasRequiredCoversEveryPoolBudget() public view {
+        uint256 need = guard.gasRequired(address(nvda));
+        assertGe(need, 2 * ENGINE_GAS + guard.RECORD_GAS_OVERHEAD());
+    }
+
+    function test_keeperWithTooLittleGasRevertsAndRecordsNothing() public {
+        engine.set(address(poolA), 1_000_000e6);
+        engine.set(address(poolB), 1_000_000e6);
+        uint256 min = _minimumGas(guard, true);
+        vm.prank(keeper);
+        vm.expectPartialRevert(ExitlineGuard.InsufficientGas.selector);
+        guard.record{gas: min - 1}(address(nvda));
+        assertEq(guard.readingCount(address(nvda)), 0);
+        assertEq(guard.readings(address(nvda)).length, 0);
+    }
+
+    function test_previewWithTooLittleGasReverts() public {
+        uint256 min = _minimumGas(guard, false);
+        vm.expectPartialRevert(ExitlineGuard.InsufficientGas.selector);
+        guard.preview{gas: min - 1}(address(nvda));
+        guard.preview{gas: min}(address(nvda));
+    }
+
+    function test_engineOverBudgetCountsAsZeroDepth() public {
+        (ExitlineGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
+        // 20 steps of 100k gas: twice the 1M budget.
+        e.set(20, 100_000, 1_000_000e6);
+        (uint256 target,, uint256 failed) = g.preview(address(nvda));
+        assertEq(failed, 2);
+        assertEq(target, 0);
+    }
+
+    function test_engineWithinBudgetCounts() public {
+        (ExitlineGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
+        // 8 steps of 100k gas: 800k, inside the 1M budget.
+        e.set(8, 100_000, 1_000_000e6);
+        (uint256 target,, uint256 failed) = g.preview(address(nvda));
+        assertEq(failed, 0);
+        assertEq(target, 2 * 1_000_000e6 * 5_000 / 10_000);
+    }
+
+    /// @dev The worst case at the minimum allowed gas: every pool burns its whole budget, and the
+    /// reading must still be stored and the cap cut through the real Vault V2 code. If the fixed
+    /// overhead were too small, this would run out of gas or record a CapCutFailed.
+    function test_minimumGasWithFullBudgetBurnStillRecordsAndCuts() public {
+        (ExitlineGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
+        // More work than the budget: each engine call burns all of it and fails.
+        e.set(1_000, 100_000, 0);
+        for (uint256 i; i < g.WINDOW(); ++i) {
+            feed.set(block.timestamp);
+            uint256 need = _minimumGas(g, true);
+            vm.recordLogs();
+            vm.prank(keeper);
+            g.record{gas: need}(address(nvda));
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+            for (uint256 j; j < logs.length; ++j) {
+                assertTrue(logs[j].topics[0] != ExitlineGuard.CapCutFailed.selector, "cap cut starved");
+            }
+            vm.warp(block.timestamp + GAP);
+        }
+        assertEq(g.readingCount(address(nvda)), g.WINDOW());
+        assertEq(_cap(), 0, "cap cut to zero depth");
+    }
+
+    function test_normalCallAtMinimumGasMatchesAmpleGas() public {
+        engine.set(address(poolA), 300_000e6);
+        engine.set(address(poolB), 500_000e6);
+        (uint256 ample,,) = guard.preview(address(nvda));
+        uint256 need = _minimumGas(guard, true);
+        vm.prank(keeper);
+        uint256 target = guard.record{gas: need}(address(nvda));
+        assertEq(target, ample);
+        assertEq(target, 800_000e6 * 5_000 / 10_000);
     }
 }
