@@ -6,7 +6,7 @@
 //! lists every canonical Morpho Blue market with TOKEN as collateral (see src/markets.rs).
 //!
 //! Usage: exitline-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify]
-//!                         [--lenders PATH | --no-lenders]
+//!                         [--lenders PATH | --no-lenders] [--only AAPL,NVDA]
 //! The RPC defaults to $ROBINHOOD_RPC_URL, then to Robinhood Chain's public endpoint.
 //!
 //! It also reports stock tokens held by lending contracts (see lenders.json and src/lenders.rs),
@@ -63,6 +63,8 @@ struct Args {
     json: Option<String>,
     verify: bool,
     lenders: Option<String>,
+    /// Restrict the depth report to these stocks (listed symbols or addresses).
+    only: Option<Vec<String>>,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -73,6 +75,7 @@ fn parse_args() -> Result<Args, String> {
         json: None,
         verify: false,
         lenders: Some(concat!(env!("CARGO_MANIFEST_DIR"), "/lenders.json").into()),
+        only: None,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -93,9 +96,10 @@ fn parse_args() -> Result<Args, String> {
             "--verify" => a.verify = true,
             "--lenders" => a.lenders = Some(val()?),
             "--no-lenders" => a.lenders = None,
+            "--only" => a.only = Some(val()?.split(',').map(|s| s.trim().to_string()).collect()),
             "-h" | "--help" => {
                 println!(
-                    "exitline-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify] [--lenders PATH | --no-lenders]"
+                    "exitline-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify] [--lenders PATH | --no-lenders] [--only SYMBOLS]"
                 );
                 exit(0);
             }
@@ -394,6 +398,17 @@ fn run(args: Args) -> Result<(), String> {
         by_stock.entry(p.collateralToken).or_default().push((id, p, m));
     }
 
+    if let Some(only) = &args.only {
+        let keep = only
+            .iter()
+            .map(|t| match LISTED.iter().find(|(_, s)| s.eq_ignore_ascii_case(t)) {
+                Some((a, _)) => Ok(*a),
+                None => t.parse::<Address>().map_err(|_| format!("--only: {t} is neither a listed symbol nor an address")),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        by_stock.retain(|a, _| keep.contains(a));
+        ensure(!by_stock.is_empty(), || "--only matched none of the vault's stocks".into())?;
+    }
     let inventory = args.lenders.as_deref().map(lenders::load).transpose()?;
     let stock_addrs: Vec<Address> = by_stock.keys().copied().collect();
 
