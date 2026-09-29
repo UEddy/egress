@@ -33,9 +33,28 @@ pub fn mul_div(a: U256, b: U256, d: U256) -> Option<U256> {
     Some(U256::from_limbs([limbs[0], limbs[1], limbs[2], limbs[3]]))
 }
 
+/// floor(sqrt(x)), integers only. `Uint::root` seeds its guess with an f64 logarithm, and Stylus
+/// rejects any floating point instruction at activation, so it must not be used here.
+pub fn sqrt_floor(x: U256) -> U256 {
+    if x.is_zero() {
+        return U256::ZERO;
+    }
+    // Start at a power of two >= sqrt(x); Newton's iteration then decreases monotonically to
+    // floor(sqrt(x)) and stops the first time it would not decrease. y <= 2^128 and x / y < 2^129,
+    // so y + x / y cannot overflow.
+    let mut y = U256::from(1u8) << x.bit_len().div_ceil(2);
+    loop {
+        let z = (y + x / y) >> 1usize;
+        if z >= y {
+            return y;
+        }
+        y = z;
+    }
+}
+
 /// ceil(sqrt(x)).
 pub fn sqrt_ceil(x: U256) -> U256 {
-    let r = x.root(2);
+    let r = sqrt_floor(x);
     if r * r < x {
         r + U256::from(1u8)
     } else {
@@ -231,4 +250,53 @@ mod tests {
         assert_eq!(compress(-61, 60), -2);
         assert_eq!(compress(59, 60), 0);
     }
+
+    #[test]
+    fn sqrt_floor_is_exact_and_matches_ruint() {
+        let check = |x: U256| {
+            let r = sqrt_floor(x);
+            assert!(r * r <= x, "{x}: {r}^2 > x");
+            let r1 = r + U256::from(1u8);
+            // (r+1)^2 > x, checked without overflow at the top of the range.
+            assert!(r1.checked_mul(r1).is_none_or(|sq| sq > x), "{x}: floor too small");
+            assert_eq!(r, x.root(2), "{x}");
+            let c = sqrt_ceil(x);
+            // ceil: c^2 >= x (or c^2 overflows, i.e. c = 2^128 at the top) and (c-1)^2 < x.
+            assert!(c.checked_mul(c).is_none_or(|sq| sq >= x), "{x}: ceil too small");
+            assert!(c.is_zero() || (c - U256::from(1u8)) * (c - U256::from(1u8)) < x, "{x}: ceil too big");
+        };
+        for v in [0u64, 1, 2, 3, 4, 5, 8, 9, 15, 16, 17, 99, 100, 101, u32::MAX as u64, u64::MAX] {
+            check(U256::from(v));
+        }
+        check(U256::MAX);
+        check(U256::MAX - U256::from(1u8));
+        for b in 1..256usize {
+            let p = U256::from(1u8) << b;
+            check(p - U256::from(1u8));
+            check(p);
+            check(p + U256::from(1u8));
+        }
+        // Perfect squares and their neighbours across the range.
+        let mut k = U256::from(3u8);
+        while let Some(sq) = k.checked_mul(k) {
+            check(sq - U256::from(1u8));
+            check(sq);
+            check(sq + U256::from(1u8));
+            k = k * U256::from(7u8) + U256::from(5u8);
+        }
+        // Pseudo-random values (xorshift), including the Q192 scale sqrt_price_limit uses.
+        let mut s = 0x9e37_79b9_7f4a_7c15u64;
+        for _ in 0..2000 {
+            let mut limbs = [0u64; 4];
+            for l in &mut limbs {
+                s ^= s << 13;
+                s ^= s >> 7;
+                s ^= s << 17;
+                *l = s;
+            }
+            let x = U256::from_limbs(limbs) >> (s % 256) as usize;
+            check(x);
+        }
+    }
+
 }
