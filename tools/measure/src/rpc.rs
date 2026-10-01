@@ -151,7 +151,8 @@ impl Rpc {
             match self.request("eth_getLogs", params) {
                 Ok(Value::Array(logs)) => out.extend(logs),
                 Ok(v) => return Err(format!("eth_getLogs: unexpected {v}")),
-                Err(e) if b > a && (e.contains("exceeds limit") || e.contains("timed out")) => {
+                // Too many results, too slow, or (since Sep 29) a range over 10M blocks.
+                Err(e) if b > a && (e.contains("exceeds limit") || e.contains("timed out") || e.contains("narrow the block range")) => {
                     let m = a + (b - a) / 2;
                     stack.push((m + 1, b));
                     stack.push((a, m));
