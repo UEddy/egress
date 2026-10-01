@@ -71,7 +71,7 @@ contract NetNetAaplForkTest is Test {
         c.coverageBps = COVERAGE_BPS;
         c.maxImpactBps = IMPACT_BPS;
         c.closedHaircutBps = 5_000;
-        c.maxOracleAge = 1 hours;
+        c.maxOracleAge = 26 hours;
         c.corporateActionWindow = 2 days;
         c.feed = address(feed);
         vm.startPrank(guardOwner);
@@ -118,6 +118,11 @@ contract NetNetAaplForkTest is Test {
             depth += depths[i];
         }
         uint256 expected = depth * COVERAGE_BPS / 10_000;
+        // On a weekend (or if the fork falls in Mon 00:00-01:00 UTC) the closed haircut applies.
+        // Readings span 40 minutes, so the state is checked for every reading below.
+        bool closedAtStart = guard.marketClosed(AAPL);
+        emit log_named_string("market at fork block", closedAtStart ? "closed (weekend window)" : "open");
+        if (closedAtStart) expected = expected * 5_000 / 10_000;
 
         emit log_named_uint("fork block", forkBlock);
         emit log_named_decimal_uint("AAPL sellable within 5% (USDG)", depth, 6);
@@ -126,6 +131,7 @@ contract NetNetAaplForkTest is Test {
 
         // Four readings: no cut before the window is full.
         for (uint256 i; i < guard.WINDOW() - 1; ++i) {
+            assertEq(guard.marketClosed(AAPL), closedAtStart, "fork spans a weekend edge; rerun later");
             assertEq(_record(), expected);
             assertEq(_cap(), oldCap, "cut before the window was full");
         }

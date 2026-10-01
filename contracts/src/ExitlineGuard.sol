@@ -33,6 +33,14 @@ contract ExitlineGuard is Ownable2Step {
     uint256 public constant MAX_IMPACT_BPS = 5_000;
     uint64 public constant MIN_GAP_FLOOR = 60;
     uint64 public constant MIN_GAP_CEILING = 1 days;
+    /// @dev Floor for `maxOracleAge`. Robinhood's Chainlink stock feeds have a 24 h heartbeat and a
+    /// 0.5% deviation trigger, so a quiet weekday can leave a feed nearly a day old.
+    uint32 public constant MIN_ORACLE_AGE = 26 hours;
+    /// @dev Weekend closure in UTC: Saturday 00:00 to Monday 01:00. US equities close Friday 20:00
+    /// and reopen Sunday 20:00 New York time (24/5 feed hours), which is Sat 00:00 / Mon 00:00 UTC
+    /// under EDT and Sat 01:00 / Mon 01:00 UTC under EST. The window covers both and overlaps
+    /// trading by at most an hour, on the side that applies the stricter haircut.
+    uint256 internal constant MONDAY_REOPEN = 1 hours;
 
     /// @dev Bounds on the per-pool engine budget. The ceiling keeps a full measurement
     /// (MAX_POOLS × (budget + 1/63 + call cost) + overhead) under the 32M per-transaction gas
@@ -55,7 +63,8 @@ contract ExitlineGuard is Ownable2Step {
         uint16 maxImpactBps;
         /// @dev Extra multiplier on depth while the stock's oracle is stale (market closed), in bps (0..10000).
         uint16 closedHaircutBps;
-        /// @dev Oracle age beyond which the market is treated as closed.
+        /// @dev Oracle age beyond which the market is treated as closed, as a fallback to the
+        /// weekend calendar (>= MIN_ORACLE_AGE).
         uint32 maxOracleAge;
         /// @dev How far ahead a pending corporate action triggers an emergency cut.
         uint32 corporateActionWindow;
@@ -155,7 +164,7 @@ contract ExitlineGuard is Ownable2Step {
         if (cfg.coverageBps == 0 || cfg.coverageBps > BPS) revert BadParameter();
         if (cfg.maxImpactBps == 0 || cfg.maxImpactBps > MAX_IMPACT_BPS) revert BadParameter();
         if (cfg.closedHaircutBps > BPS) revert BadParameter();
-        if (cfg.maxOracleAge == 0) revert BadParameter();
+        if (cfg.maxOracleAge < MIN_ORACLE_AGE) revert BadParameter();
         if (poolList.length == 0 || poolList.length > MAX_POOLS) revert BadParameter();
 
         delete _pools[stock];
@@ -271,6 +280,19 @@ contract ExitlineGuard is Ownable2Step {
         return n * perPool + RECORD_GAS_OVERHEAD;
     }
 
+    /// @notice Whether `record` would treat the stock's market as closed right now.
+    function marketClosed(address stock) external view returns (bool) {
+        return _marketClosed(_config[stock]);
+    }
+
+    /// @notice True from Saturday 00:00 UTC to Monday 01:00 UTC. US market holidays are not covered.
+    function isWeekendClosed(uint256 timestamp) public pure returns (bool) {
+        // 1970-01-01 was a Thursday, so (days + 4) % 7 gives 0 = Sunday ... 6 = Saturday.
+        uint256 weekday = (timestamp / 1 days + 4) % 7;
+        if (weekday == 6 || weekday == 0) return true;
+        return weekday == 1 && timestamp % 1 days < MONDAY_REOPEN;
+    }
+
     function corporateActionPending(address stock) external view returns (bool) {
         return _corporateActionPending(stock, _config[stock].corporateActionWindow);
     }
@@ -309,9 +331,10 @@ contract ExitlineGuard is Ownable2Step {
         if (target > type(uint128).max) target = type(uint128).max;
     }
 
-    /// @dev A feed that cannot be read, or whose last update is older than `maxOracleAge`, is
-    /// treated as closed, which applies the stricter haircut.
+    /// @dev Closed on the weekend calendar. As a fallback, also closed if the feed cannot be read
+    /// or its last update is older than `maxOracleAge`. Closed applies the stricter haircut.
     function _marketClosed(Config memory cfg) internal view returns (bool) {
+        if (isWeekendClosed(block.timestamp)) return true;
         try IAggregatorV3(cfg.feed).latestRoundData() returns (uint80, int256, uint256, uint256 updatedAt, uint80) {
             if (updatedAt > block.timestamp) return false;
             return block.timestamp - updatedAt > cfg.maxOracleAge;

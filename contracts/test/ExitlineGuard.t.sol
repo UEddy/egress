@@ -70,7 +70,7 @@ contract ExitlineGuardTest is Test {
         c.coverageBps = 5_000; // lend against half of sellable depth
         c.maxImpactBps = 500; // depth measured to a 5% price fall
         c.closedHaircutBps = 5_000; // halve it again while the market is closed
-        c.maxOracleAge = 1 hours;
+        c.maxOracleAge = 26 hours;
         c.corporateActionWindow = 2 days;
         c.feed = address(feed);
     }
@@ -159,6 +159,12 @@ contract ExitlineGuardTest is Test {
         vm.prank(guardOwner);
         vm.expectRevert(ExitlineGuard.BadParameter.selector);
         guard.configure(address(nvda), c, _pools());
+
+        c = _config();
+        c.maxOracleAge = 26 hours - 1;
+        vm.prank(guardOwner);
+        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        guard.configure(address(nvda), c, _pools());
     }
 
     function test_onlyOwnerConfigures() public {
@@ -201,7 +207,8 @@ contract ExitlineGuardTest is Test {
     function test_closedMarketAppliesHaircut() public {
         engine.set(address(poolA), 200_000e6);
         engine.set(address(poolB), 200_000e6);
-        feed.set(block.timestamp - 1 hours - 1);
+        // setUp runs on a Friday 08:00 UTC, an open weekday: only the stale-feed fallback can close it.
+        feed.set(block.timestamp - 26 hours - 1);
         (uint256 target, bool closed,) = guard.preview(address(nvda));
         assertTrue(closed);
         assertEq(target, 100_000e6);
@@ -527,5 +534,94 @@ contract ExitlineGuardTest is Test {
         uint256 target = guard.record{gas: need}(address(nvda));
         assertEq(target, ample);
         assertEq(target, 800_000e6 * 5_000 / 10_000);
+    }
+
+    /* WEEKEND CALENDAR */
+
+    // Timestamps checked independently (Python datetime, UTC). Oct 2026 is EDT, Dec 2026 is EST.
+    uint256 constant THU_1200_UTC = 1_790_856_000; // Thu 2026-10-01 12:00
+    uint256 constant FRI_1500_UTC = 1_790_953_200; // Fri 2026-10-02 15:00 (11:00 EDT)
+    uint256 constant FRI_2359_UTC = 1_790_985_599; // Fri 2026-10-02 23:59:59 (19:59:59 EDT)
+    uint256 constant SAT_0000_UTC = 1_790_985_600; // Sat 2026-10-03 00:00 (Fri 20:00 EDT)
+    uint256 constant SUN_2359_UTC = 1_791_158_399; // Sun 2026-10-04 23:59:59
+    uint256 constant MON_0000_UTC = 1_791_158_400; // Mon 2026-10-05 00:00 (Sun 20:00 EDT)
+    uint256 constant MON_0030_UTC = 1_791_160_200; // Mon 2026-10-05 00:30
+    uint256 constant MON_0059_UTC = 1_791_161_999; // Mon 2026-10-05 00:59:59
+    uint256 constant MON_0100_UTC = 1_791_162_000; // Mon 2026-10-05 01:00
+    uint256 constant EST_FRI_CLOSE = 1_796_432_400; // Sat 2026-12-05 01:00 UTC = Fri 20:00 EST
+    uint256 constant EST_SUN_OPEN = 1_796_605_200; // Mon 2026-12-07 01:00 UTC = Sun 20:00 EST
+
+    function test_weekendWindowEdges() public view {
+        assertFalse(guard.isWeekendClosed(THU_1200_UTC), "Thursday");
+        assertFalse(guard.isWeekendClosed(FRI_1500_UTC), "Friday afternoon");
+        assertFalse(guard.isWeekendClosed(FRI_2359_UTC), "last second of Friday UTC");
+        assertTrue(guard.isWeekendClosed(SAT_0000_UTC), "Saturday 00:00");
+        assertTrue(guard.isWeekendClosed(SUN_2359_UTC), "Sunday 23:59:59");
+        assertTrue(guard.isWeekendClosed(MON_0000_UTC), "Monday 00:00");
+        assertTrue(guard.isWeekendClosed(MON_0030_UTC), "Monday 00:30");
+        assertTrue(guard.isWeekendClosed(MON_0059_UTC), "Monday 00:59:59");
+        assertFalse(guard.isWeekendClosed(MON_0100_UTC), "Monday 01:00");
+    }
+
+    function test_weekendWindowCoversEstHours() public view {
+        // Under EST the session ends Fri 20:00 = Sat 01:00 UTC and resumes Sun 20:00 = Mon 01:00 UTC.
+        assertTrue(guard.isWeekendClosed(EST_FRI_CLOSE - 1), "Fri 19:59:59 EST, after the UTC close");
+        assertTrue(guard.isWeekendClosed(EST_FRI_CLOSE));
+        assertTrue(guard.isWeekendClosed(EST_SUN_OPEN - 1));
+        assertFalse(guard.isWeekendClosed(EST_SUN_OPEN), "Sun 20:00 EST reopen");
+    }
+
+    function testFuzz_weekendIsExactly49HoursPerWeek(uint32 weekIndex) public view {
+        // Every week from a Monday 01:00 UTC holds Sat 00:00 .. Mon 01:00: 49 hours closed.
+        uint256 start = MON_0100_UTC + uint256(weekIndex % 2_000) * 7 days;
+        uint256 closedHours;
+        for (uint256 h; h < 7 * 24; ++h) {
+            if (guard.isWeekendClosed(start + h * 1 hours)) ++closedHours;
+        }
+        assertEq(closedHours, 49);
+    }
+
+    function _previewAt(uint256 ts, uint256 feedAge) internal returns (bool closed, uint256 target) {
+        vm.warp(ts);
+        engine.set(address(poolA), 200_000e6);
+        engine.set(address(poolB), 200_000e6);
+        feed.set(ts - feedAge);
+        (target, closed,) = guard.preview(address(nvda));
+    }
+
+    function test_saturdayWithFreshFeedIsClosed() public {
+        (bool closed, uint256 target) = _previewAt(SAT_0000_UTC, 0);
+        assertTrue(closed);
+        assertTrue(guard.marketClosed(address(nvda)));
+        assertEq(target, 100_000e6);
+    }
+
+    function test_mondayHalfPastMidnightUtcIsClosed() public {
+        (bool closed,) = _previewAt(MON_0030_UTC, 0);
+        assertTrue(closed);
+    }
+
+    function test_mondayOneAmUtcReopens() public {
+        (bool closed, uint256 target) = _previewAt(MON_0100_UTC, 0);
+        assertFalse(closed);
+        assertEq(target, 200_000e6);
+    }
+
+    function test_fridayAfternoonUtcWithQuietFeedIsOpen() public {
+        // A feed 25 h old on a weekday is a quiet stock, not a closed market.
+        (bool closed, uint256 target) = _previewAt(FRI_1500_UTC, 25 hours);
+        assertFalse(closed);
+        assertEq(target, 200_000e6);
+    }
+
+    function test_weekdayStaleFeedFallbackCloses() public {
+        (bool closed,) = _previewAt(THU_1200_UTC, 26 hours + 1);
+        assertTrue(closed);
+    }
+
+    function test_weekdayUnreadableFeedFallbackCloses() public {
+        vm.warp(THU_1200_UTC);
+        feed.setBroken(true);
+        assertTrue(guard.marketClosed(address(nvda)));
     }
 }
