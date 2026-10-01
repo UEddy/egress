@@ -106,13 +106,80 @@ Done and passing:
   transfers from contract 0x39adb8acd07427d338b5f1afab436a04abfdb7c4 with no Blue event (purpose
   unconfirmed; looks like dividend-style payouts). No position owns it.
 
+- ENGINE DEPLOYED to Robinhood Chain mainnet (Oct 2, 2026).
+  Address 0x276F4933f06B77912384D64291E062885C33E031, deployer 0xd2B33234991B1B671Df496d6ec3c5B788b0326e7.
+  Deploy tx 0x4ffa561c77f827b85288af8226d13cf4676fdce219f06e7e0caf4a7554e16136 (block 77745782,
+  5,058,794 gas incl. 19,779 for L1, at 0.035828 gwei) and activation tx
+  0xab729bd454111490f6703346e17b07326b8338d7c1c866ecbe849453816c2f56 (block 77745814, 4,500,553 gas
+  at 0.035754 gwei, value 0.000119713291997331 ETH of which ArbWasm refunded the 20% bump, so the
+  data fee actually paid was 0.000099761076664443 ETH).
+  Total spend 0.000441920320058443 ETH against a 0.05 gwei fee cap whose worst case was
+  0.000601872191997331 ETH. ArbWasm reports stylusVersion 3, programVersion 3, programInitGas 26,692,
+  programMemoryFootprint 17 pages.
+  Deployed by `--wasm-file` from a container build, because of the cargo-stylus keystore limitation
+  recorded in the next entry. The consequences are worth knowing:
+  - the container build is NOT byte-identical to a local build: container wasm 73,680 bytes
+    (sha256 dc7cc13a147f5534b8e559fc4cd32707969c2d459c51c5ea9ae84fbb6864504f) vs local 73,536
+    (sha256 980bd5b169de6590fb8deb702ae5055715e20ec4d4bd4c9a6310dd85e6a84109). The difference is
+    expected: the embedded build paths differ (/source vs /home/...).
+  - `--wasm-file` deploys the raw wasm WITHOUT the project metadata hash a project build appends,
+    so the compressed size is 23,055 bytes rather than the container project build's 23,123 (a
+    local project build is 23,076). The deployed code therefore carries no embedded source hash,
+    which is what `cargo stylus verify` keys off. Verified instead by byte comparison: on-chain
+    `eth_getCode` is 23,055 bytes with the eff00000 prefix and sha256
+    56d052ed92a38b0b32afa03336d301692ce93329027bbbf07c4da744625b70bf, identical to the bytes
+    cargo-stylus simulated for activation from the container wasm.
+  - the container writes its artifacts as root, so build it on a copy outside the repo or it
+    leaves root-owned files in engine/target/.
+- cargo-stylus 0.10.9 traps, both hit while preparing the deploy and both still present:
+  - `--estimate-gas` prints the activation data fee (in wei) into the "deployment tx gas" field and
+    multiplies it by the gas price, so it reported a total of "11961 ETH" at 0.1 gwei and
+    "5985 ETH" at 0.05. The figure is meaningless and drifts run to run with the L1 price. The real
+    numbers came from the `eth_estimateGas` it sends (captured by pointing `--endpoint` at a local
+    logging proxy) and, for activation, from replaying its own simulation (an eth_call with the
+    contract's code as a state override on ArbWasm `activateProgram`) through `eth_estimateGas`
+    instead of `eth_call`.
+  - the reproducible (Docker) path mounts only the workspace root at /source and re-runs itself in
+    the container with the same arguments, so a keystore outside the repo is invisible inside and
+    the command dies with a bare "No such file or directory (os error 2)". Nothing is wrong with the
+    toolchain image (`docker run ... cargo stylus --version` works). To deploy reproducibly and
+    verifiably in one step the key material would have to be mounted into the container; that was
+    rejected here, hence the `--wasm-file` route above.
+  The Stylus deployer at 0xcEcba2F1DC234f70Dd89F2041029807F8D03A990 has no code on this chain. That
+  is harmless for the engine (no constructor, hence a plain CREATE) but rules out any
+  `--constructor-args` deployment.
+
+- Deployed-engine cross-check (Oct 2, block 77749579, `tools/measure/results/engine-crosscheck-77749579.json`):
+  all 63 pool x impact cases (21 Uniswap V3 stock/USDG pools, 500/1000/2000 bps, 15 of them depth 0)
+  equal the deployed engine's `sellProceeds` TO THE WEI, zero mismatches, and `--verify` confirmed
+  every complete walk equals the pool's real swap. Nothing was step-bounded at those impacts.
+- Engine gas on mainnet (Oct 2, measured on the DEPLOYED engine by eth_estimateGas, blocks
+  77752815-77753816). Worst case is always NVDA/USDG fee 500 (0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3):
+  3,290,900 gas at 2000 bps (209 steps, completes), 4,065,590 at 5000 bps and 4,065,559 at 9999 bps.
+  At 5000 bps the full walk needs 277 steps and at 9999 bps 327, so the engine really does stop at
+  its 256-step bound there: 4,065,590 IS a true 256-step walk. Next highest pools are far cheaper
+  (AAPL fee 500 1,543,002 at 5000 bps, QQQ fee 500 1,283,641). The 209-to-256 step delta implies
+  roughly 16,500 gas per step, which is the figure to calibrate StepEngine's gasPerStep from.
+  CONSEQUENCE, and now the top open issue: the guard caps `maxImpactBps` at MAX_IMPACT_BPS = 5,000,
+  so a correctly sized `engineGasLimit` is 4,065,590 + 50% = 6,098,385. That EXCEEDS
+  MAX_ENGINE_GAS (3,500,000) outright, and 3,290,900 at the more realistic 2000 bps still exceeds it
+  once the margin is applied. The guard's constants cannot stand as they are. Raising
+  MAX_ENGINE_GAS to ~6.2M forces MAX_POOLS down hard, because `gasRequired` is
+  n x (budget + 1/63 + call cost) + RECORD_GAS_OVERHEAD: n = 4 needs ~25M and n = 2 ~12.6M, against
+  a per-transaction limit that is still unconfirmed on this chain. Decide MAX_ENGINE_GAS, MAX_POOLS
+  and MAX_IMPACT_BPS together, and re-run the 50 Foundry tests, before any guard is deployed.
+  Nothing in the contracts has been changed for this yet.
+
 Not done (in order):
-2. TODO before deploying any guard: set `engineGasLimit` from a measurement of the *deployed*
-   engine on mainnet: gas of a 256-step walk (a dense pool at the max impact bound) plus a 50%
-   margin. Do not pick it from mocks. Calibrate StepEngine's gasPerStep from the same measurement.
-   If the result exceeds MAX_ENGINE_GAS (3.5M), lower MAX_POOLS and raise the ceiling together.
-   Also confirm Robinhood Chain's per-transaction gas limit (the 3.5M ceiling assumes Nitro's 32M).
-3. Deploy engine, factory, a demo Vault V2 (via the official factory) and a guard on mainnet.
+2. Resize the guard's gas constants against the measured 4,065,590 (see above): pick
+   MAX_ENGINE_GAS, MAX_POOLS and MAX_IMPACT_BPS together so `gasRequired` stays under the
+   per-transaction limit, calibrate StepEngine's gasPerStep at ~16,500, and re-run the Foundry
+   tests. Robinhood Chain's per-transaction limit is still unconfirmed: the block header reports
+   2^50 (1,125,899,906,842,624), which says nothing useful, and the old 3.5M ceiling assumed
+   Nitro's 32M. This blocks any guard deployment but not the engine, which is already live.
+3. Deliberately NOT deploying GuardFactory, a demo Vault V2 or a guard on mainnet (decided Oct 1 to
+   save gas): together they cost ~9.5M gas, more than the remaining balance affords, and the guard
+   is already demonstrated end to end by the fork simulation above. Revisit only on a top-up.
 4. Dashboard (deployed frontend, required by the submission form).
 5. Outreach: ask Vault V2 curators to add the guard as a sentinel. Candidates: Denar dnUSDG2 and
    the four Vault V2 stock vaults below; NetNet Credit first (sole lender to the main AAPL market).
@@ -123,6 +190,7 @@ Stretch: sentinel `deallocate`; Uniswap V4 pools via StateView.
 
 | Contract | Address | Source |
 |---|---|---|
+| **Exitline depth engine (Stylus)** | **0x276F4933f06B77912384D64291E062885C33E031** | deployed Oct 2, 2026 |
 | Morpho Blue (canonical) | 0x9D53d5E3bd5E8d4Cbfa6DB1ca238AEA02E651010 | morpho-org/sdks |
 | Vault V2 factory | 0x0FBad98595b0186dA120E41f77C102beb49f803c | morpho-org/sdks |
 | MorphoMarketV1AdapterV2 factory | 0x79370Ed003CE325C088E530d5e8655c99c2993e1 | morpho-org/sdks |
@@ -184,9 +252,15 @@ Oracles of the main stock markets on canonical Blue (read at block 75829408):
   MAX_QUOTE_AGE 90,000 s. Three unnamed getters return 0.8e18, 1.2e18 and 349,200 s; likely USDG
   price bounds and a max base age (~4 days), not confirmed.
 
-Public RPC: https://rpc.mainnet.chain.robinhood.com. Rate limited (JSON-RPC batches of 20 pass,
-100 do not) and not an archive node: it keeps state for roughly 4,000-8,000 blocks (~7-13 min), so a
-pinned-block run must finish inside that window. A full `--verify` run with lenders takes ~4.5 min.
+RPC. $ROBINHOOD_RPC_URL is now an Alchemy endpoint (chain id 4663 confirmed) and it IS an archive
+node: reads 500,000 blocks back succeed, so pinned-block work no longer has to race a state window.
+It throttles bursts instead: tools/measure's batches of 20 drew HTTP 429 under load, and so did
+single calls for a while afterwards. Space requests out and retry on 429.
+The public endpoint https://rpc.mainnet.chain.robinhood.com still works (batches of 20 pass, 100 do
+not) but is not archive: it keeps state for roughly 4,000-8,000 blocks (~7-13 min), so a pinned-block
+run against it must finish inside that window. It also returns HTTP 403 to clients that do not send a
+browser-like User-Agent (python-urllib's default is refused; cast and reqwest are fine).
+A `--verify` run with lenders takes ~4.5 min; with --no-lenders about 55 s.
 Since Sep 29 eth_getLogs ranges are capped at 10M blocks; tools/measure splits them.
 
 Denar's equity vault is MetaMorpho V1, which has no sentinel role. Exitline supports Vault V2 only.
@@ -206,6 +280,15 @@ cd ../tools/measure && cargo run --release -- --verify --json results/denar-<blo
 cargo run --release -- markets AAPL --json results/aapl-markets-<block>.json
 cargo run --release -- --only AAPL --impacts 500 --no-lenders   # one stock, one bound, fast
 cd ../.. && contracts/script/fork-netnet-aapl.sh   # measure + fork test at the same block (~30 s)
+# how the deployed engine was built and shipped (see the status notes before reusing this):
+#   build reproducibly on a copy outside the repo, since the container writes artifacts as root
+#   docker run --rm --network host --workdir /source --volume <copy>:/source \
+#     cargo-stylus-base-0.10.9-toolchain-1.91.0 cargo stylus check --endpoint "$ROBINHOOD_RPC_URL"
+#   cargo stylus deploy --no-verify --wasm-file <copy>/target/wasm32-unknown-unknown/release/exitline_engine.wasm \
+#     --endpoint "$ROBINHOOD_RPC_URL" --keystore-path ~/.foundry/keystores/exitline-deployer \
+#     --keystore-password-path <password file> --max-fee-per-gas-gwei 0.05
+cast call 0x276F4933f06B77912384D64291E062885C33E031 \
+  'sellProceeds(address,bool,uint256)(uint256)' <pool> <stockIsToken0> <bps> --rpc-url "$ROBINHOOD_RPC_URL"
 # regenerate probe/SwapProbe.runtime.hex: solc 0.8.28, optimizer 200 runs, evm cancun, deployedBytecode
 ```
 
