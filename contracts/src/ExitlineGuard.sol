@@ -29,8 +29,17 @@ contract ExitlineGuard is Ownable2Step {
 
     uint256 public constant WINDOW = 5;
     uint256 public constant BPS = 10_000;
-    uint256 public constant MAX_POOLS = 8;
-    uint256 public constant MAX_IMPACT_BPS = 5_000;
+    /// @dev Up to 3 pools per stock. The limit is set by gas, not by preference: a full measurement
+    /// costs MAX_POOLS x (budget + 1/63 + call cost) + RECORD_GAS_OVERHEAD, which is about 18.9M at
+    /// the recommended budget below and about 20.1M at MAX_ENGINE_GAS. Both sit under the 32M
+    /// per-transaction limit of Arbitrum Nitro chains. Robinhood Chain's own limit is NOT confirmed;
+    /// if it turns out to be lower, this is the constant to lower with it.
+    uint256 public constant MAX_POOLS = 3;
+    /// @dev Depth may be measured to at most a 20% price fall. Past that the answer stops describing
+    /// risk anyone acts on, and the walk gets much more expensive: measured on mainnet, the deepest
+    /// stock/USDG pool costs 3,290,900 gas at a 20% bound and 4,065,590 at a 50% one. Production
+    /// config uses 500 (a 5% fall).
+    uint256 public constant MAX_IMPACT_BPS = 2_000;
     uint64 public constant MIN_GAP_FLOOR = 60;
     uint64 public constant MIN_GAP_CEILING = 1 days;
     /// @dev Floor for `maxOracleAge`. Robinhood's Chainlink stock feeds have a 24 h heartbeat and a
@@ -42,11 +51,18 @@ contract ExitlineGuard is Ownable2Step {
     /// trading by at most an hour, on the side that applies the stricter haircut.
     uint256 internal constant MONDAY_REOPEN = 1 hours;
 
-    /// @dev Bounds on the per-pool engine budget. The ceiling keeps a full measurement
-    /// (MAX_POOLS × (budget + 1/63 + call cost) + overhead) under the 32M per-transaction gas
-    /// limit of Arbitrum Nitro chains.
+    /// @dev Bounds on the per-pool engine budget, set from a measurement of the engine actually
+    /// deployed on Robinhood Chain mainnet (0x276F4933f06B77912384D64291E062885C33E031), taken
+    /// Oct 2, 2026 by eth_estimateGas, not from a mock:
+    ///   - the most expensive stock/USDG pool on the chain (NVDA/USDG, 0.05% fee) costs 3,290,900
+    ///     gas at the MAX_IMPACT_BPS bound of 2000, where the walk completes in 209 steps;
+    ///   - the engine's own 256-step bound caps ANY walk at about 4,065,590 gas, however dense the
+    ///     pool, because it simply stops crossing ticks there.
+    /// The recommended `engineGasLimit` is therefore 6,100,000: the 256-step cost plus 50%. That is
+    /// what a guard should be deployed with, and MAX_ENGINE_GAS leaves headroom above it so a denser
+    /// market later does not need a new guard. Never size a budget from StepEngine or any other mock.
     uint256 public constant MIN_ENGINE_GAS = 100_000;
-    uint256 public constant MAX_ENGINE_GAS = 3_500_000;
+    uint256 public constant MAX_ENGINE_GAS = 6_500_000;
     /// @dev Per pool, on top of the budget: cold account access, call base cost, ABI work.
     uint256 public constant ENGINE_CALL_GAS = 10_000;
     /// @dev Everything outside the engine calls: config and pool reads, the oracle read, the

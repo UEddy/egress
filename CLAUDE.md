@@ -61,13 +61,15 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
 ## Status (Oct 1, 2026)
 
 Done and passing:
-- Guard + factory: 50 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
-  Engine gas budget (Sep 29): each engine call gets exactly `engineGasLimit` (immutable, set via the
-  factory, bounded to 100k..3.5M); `record`/`preview` revert `InsufficientGas` unless gasleft() covers
+- Guard + factory: 51 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
+  Engine gas budget (Sep 29, constants reset Oct 2 from the mainnet measurement below): each engine
+  call gets exactly `engineGasLimit` (immutable, set via the factory, bounded to 100k..6.5M,
+  recommended 6.1M); `record`/`preview` revert `InsufficientGas` unless gasleft() covers
   every pool's budget + 1/63 + call cost + `RECORD_GAS_OVERHEAD` (250k), so a failed pool always
   failed within its full budget. Keepers size calls with `gasRequired(stock)`. Worst case at the
   minimum accepted gas (every pool burning its full budget, cut through real Vault V2) leaves
-  ~195k unused. `StepEngine` (test/mocks) burns steps × gasPerStep for calibration.
+  ~195k unused. `StepEngine` (test/mocks) burns steps × gasPerStep, calibrated to the measured
+  16,500 gas/step with the engine's 256-step bound as MAX_STEPS.
   Weekend calendar (Oct 1): replaces the oracle-age-only closed test; edge tests at Fri 15:00 and
   23:59:59 UTC, Sat 00:00, Sun 23:59:59, Mon 00:00/00:30/00:59:59/01:00 UTC, both EDT and EST weeks;
   fuzz checks every week has exactly 49 closed hours.
@@ -160,23 +162,34 @@ Done and passing:
   its 256-step bound there: 4,065,590 IS a true 256-step walk. Next highest pools are far cheaper
   (AAPL fee 500 1,543,002 at 5000 bps, QQQ fee 500 1,283,641). The 209-to-256 step delta implies
   roughly 16,500 gas per step, which is the figure to calibrate StepEngine's gasPerStep from.
-  CONSEQUENCE, and now the top open issue: the guard caps `maxImpactBps` at MAX_IMPACT_BPS = 5,000,
-  so a correctly sized `engineGasLimit` is 4,065,590 + 50% = 6,098,385. That EXCEEDS
-  MAX_ENGINE_GAS (3,500,000) outright, and 3,290,900 at the more realistic 2000 bps still exceeds it
-  once the margin is applied. The guard's constants cannot stand as they are. Raising
-  MAX_ENGINE_GAS to ~6.2M forces MAX_POOLS down hard, because `gasRequired` is
-  n x (budget + 1/63 + call cost) + RECORD_GAS_OVERHEAD: n = 4 needs ~25M and n = 2 ~12.6M, against
-  a per-transaction limit that is still unconfirmed on this chain. Decide MAX_ENGINE_GAS, MAX_POOLS
-  and MAX_IMPACT_BPS together, and re-run the 50 Foundry tests, before any guard is deployed.
-  Nothing in the contracts has been changed for this yet.
+- Gas design set from that measurement (Oct 2, 2026). The three constants were chosen together:
+  - MAX_IMPACT_BPS 5,000 -> **2,000**. Depth past a 20% price fall does not describe risk anyone
+    acts on, and it is where the walk gets expensive (3,290,900 gas at 20% vs 4,065,590 at 50%).
+    Production config uses 500 (5%), so this is well above what is actually configured.
+  - MAX_ENGINE_GAS 3,500,000 -> **6,500,000**, with the recommended `engineGasLimit` documented as
+    **6,100,000**. The engine's 256-step bound caps ANY walk at about 4,065,590 gas no matter how
+    dense the pool, so 6.1M is that measured ceiling plus 50%. The constant sits above it so a
+    denser market later does not require a new guard.
+  - MAX_POOLS 8 -> **3**. `gasRequired` is n x (budget + 1/63 + ENGINE_CALL_GAS) +
+    RECORD_GAS_OVERHEAD, so a full measurement costs about 18.87M at the recommended 6.1M budget
+    and about 20.09M at the 6.5M ceiling. Both are under the 32M per-transaction limit of Arbitrum
+    Nitro chains, but THAT 32M IS STILL AN ASSUMPTION about Robinhood Chain, not a confirmed
+    figure: the block header reports 2^50 (1,125,899,906,842,624), which says nothing useful, and
+    no per-transaction limit has been read from the chain or its docs. MAX_POOLS is the constant to
+    lower if the real limit turns out smaller. Note AAPL has exactly 3 Uniswap V3 USDG pools, so
+    the fork simulation sits exactly at the new ceiling; a fourth pool would not fit.
+  StepEngine (test/mocks) now carries MAINNET_GAS_PER_STEP = 16,500 and MAX_STEPS = 256, calibrated
+  from the 209-to-256 step delta above rather than guessed, and
+  `test_worstCaseFitsInTransactionGasLimit` asserts the design against the measured figures instead
+  of only against the constants. A new test,
+  `test_calibratedFullStepWalkFitsRecommendedBudget`, drives the calibrated mock for a full 256-step
+  walk and requires it to fit the 6.1M budget and count as real depth (it burns ~11.4M gas in the
+  test). 51 Foundry tests pass, plus 5 crosscheck, 22 engine and the fork simulation.
 
 Not done (in order):
-2. Resize the guard's gas constants against the measured 4,065,590 (see above): pick
-   MAX_ENGINE_GAS, MAX_POOLS and MAX_IMPACT_BPS together so `gasRequired` stays under the
-   per-transaction limit, calibrate StepEngine's gasPerStep at ~16,500, and re-run the Foundry
-   tests. Robinhood Chain's per-transaction limit is still unconfirmed: the block header reports
-   2^50 (1,125,899,906,842,624), which says nothing useful, and the old 3.5M ceiling assumed
-   Nitro's 32M. This blocks any guard deployment but not the engine, which is already live.
+2. Confirm Robinhood Chain's per-transaction gas limit. The gas constants are now set (see above)
+   on the assumption of Nitro's 32M, which has not been verified on this chain. If it is lower,
+   lower MAX_POOLS to match. Everything else about the gas design is measured, not assumed.
 3. Deliberately NOT deploying GuardFactory, a demo Vault V2 or a guard on mainnet (decided Oct 1 to
    save gas): together they cost ~9.5M gas, more than the remaining balance affords, and the guard
    is already demonstrated end to end by the fork simulation above. Revisit only on a top-up.

@@ -149,7 +149,7 @@ contract ExitlineGuardTest is Test {
         guard.configure(address(nvda), c, _pools());
 
         c = _config();
-        c.maxImpactBps = 5_001;
+        c.maxImpactBps = 2_001;
         vm.prank(guardOwner);
         vm.expectRevert(ExitlineGuard.BadParameter.selector);
         guard.configure(address(nvda), c, _pools());
@@ -456,9 +456,48 @@ contract ExitlineGuardTest is Test {
         assertEq(guard.engineGasLimit(), ENGINE_GAS);
     }
 
+    /// @dev Gas measured on the engine deployed to Robinhood Chain mainnet, Oct 2, 2026. The
+    /// 256-step figure is the ceiling for any walk, because the engine stops crossing ticks there.
+    uint256 constant MEASURED_AT_MAX_IMPACT = 3_290_900; // NVDA/USDG 0.05% at 2000 bps, 209 steps
+    uint256 constant MEASURED_256_STEP = 4_065_590; // the same pool stopped at the step bound
+    uint256 constant RECOMMENDED_ENGINE_GAS = 6_100_000; // MEASURED_256_STEP + 50%
+
+    /// @dev The gas design, checked against the mainnet measurement instead of against a mock.
+    /// The worst case is every pool burning its entire budget inside one transaction.
     function test_worstCaseFitsInTransactionGasLimit() public view {
-        uint256 perPool = guard.MAX_ENGINE_GAS() + (guard.MAX_ENGINE_GAS() + 62) / 63 + guard.ENGINE_CALL_GAS();
-        assertLe(guard.MAX_POOLS() * perPool + guard.RECORD_GAS_OVERHEAD(), 32_000_000);
+        // The recommended budget carries the full 50% margin over the worst walk the engine can do,
+        // and is a budget a guard can actually be deployed with.
+        assertGe(RECOMMENDED_ENGINE_GAS, MEASURED_256_STEP * 3 / 2, "recommended below measured +50%");
+        assertGe(RECOMMENDED_ENGINE_GAS, guard.MIN_ENGINE_GAS(), "recommended below the floor");
+        assertLe(RECOMMENDED_ENGINE_GAS, guard.MAX_ENGINE_GAS(), "recommended above the ceiling");
+
+        // A pool measured at the configured impact bound has to fit one budget with room to spare.
+        assertLt(MEASURED_AT_MAX_IMPACT, RECOMMENDED_ENGINE_GAS, "measured cost exceeds the budget");
+
+        // A full measurement at the recommended budget: about 18.9M.
+        uint256 perPoolRecommended =
+            RECOMMENDED_ENGINE_GAS + (RECOMMENDED_ENGINE_GAS + 62) / 63 + guard.ENGINE_CALL_GAS();
+        uint256 worstRecommended = guard.MAX_POOLS() * perPoolRecommended + guard.RECORD_GAS_OVERHEAD();
+        assertLt(worstRecommended, 19_000_000, "recommended worst case above 19M");
+
+        // And at the ceiling, since a guard may legally be deployed with MAX_ENGINE_GAS: about 20.1M.
+        uint256 perPoolMax = guard.MAX_ENGINE_GAS() + (guard.MAX_ENGINE_GAS() + 62) / 63 + guard.ENGINE_CALL_GAS();
+        uint256 worstMax = guard.MAX_POOLS() * perPoolMax + guard.RECORD_GAS_OVERHEAD();
+        assertLt(worstMax, 21_000_000, "ceiling worst case above 21M");
+
+        // Both stay under the 32M per-transaction limit of Arbitrum Nitro chains. Robinhood Chain's
+        // own limit is still unconfirmed, which is why MAX_POOLS is deliberately small.
+        assertLe(worstMax, 32_000_000);
+    }
+
+    /// @dev A walk that runs the engine's full 256 steps, at the per-step cost measured on mainnet,
+    /// must fit inside the recommended budget and count as real depth rather than a failed pool.
+    function test_calibratedFullStepWalkFitsRecommendedBudget() public {
+        (ExitlineGuard g, StepEngine e) = _stepGuard(RECOMMENDED_ENGINE_GAS);
+        e.set(e.MAX_STEPS(), e.MAINNET_GAS_PER_STEP(), 1_000_000e6);
+        (uint256 target,, uint256 failed) = g.preview(address(nvda));
+        assertEq(failed, 0, "a full 256-step walk did not fit the recommended budget");
+        assertEq(target, 2 * 1_000_000e6 * 5_000 / 10_000);
     }
 
     function test_gasRequiredCoversEveryPoolBudget() public view {

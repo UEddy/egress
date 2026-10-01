@@ -83,6 +83,15 @@ contract MockEngine is IDepthEngine {
 /// (one step = one tick crossing) when sizing `engineGasLimit`. Each step burns `gasPerStep`,
 /// so a call costs about steps × gasPerStep. Calibrate gasPerStep from the deployed engine.
 contract StepEngine is IDepthEngine {
+    /// @dev Gas per tick-crossing step, calibrated from the engine deployed on Robinhood Chain
+    /// mainnet (0x276F4933f06B77912384D64291E062885C33E031), measured Oct 2, 2026: the NVDA/USDG
+    /// 0.05% pool cost 3,290,900 gas for a 209-step walk and 4,065,590 for one stopped at the
+    /// step bound, a delta of 774,690 gas over 47 steps, so about 16,500 per step.
+    uint256 public constant MAINNET_GAS_PER_STEP = 16_500;
+    /// @dev The engine's hard step bound (engine/src/walk.rs MAX_STEPS), so the most a single walk
+    /// can cost is MAX_STEPS x MAINNET_GAS_PER_STEP regardless of how dense the pool is.
+    uint256 public constant MAX_STEPS = 256;
+
     uint256 public steps;
     uint256 public gasPerStep;
     uint256 public proceedsPerPool;

@@ -104,8 +104,8 @@ unreachable oracle can do is make lending more conservative.
   (`uiMultiplier`, `newUIMultiplier`, `effectiveAt`).
 
 A cut is also not a loss event for existing borrowers. In the fork simulation below, the AAPL cap
-falls to 68,336 USDG while the vault's existing AAPL allocation is 197,000 USDG. The cut stops new
-lending and leaves current positions alone.
+falls to roughly 62,000 to 68,000 USDG depending on the block, while the vault's existing AAPL
+allocation is about 197,000 USDG. The cut stops new lending and leaves current positions alone.
 
 ## Deployed
 
@@ -113,8 +113,40 @@ lending and leaves current positions alone.
 |---|---|
 | Depth engine (Stylus), Robinhood Chain mainnet | `0x276F4933f06B77912384D64291E062885C33E031` |
 
-Activated at Stylus version 3. The deployed code is 23,055 bytes with sha256
-`56d052ed92a38b0b32afa03336d301692ce93329027bbbf07c4da744625b70bf`.
+Activated at Stylus version 3.
+
+### Verifying the deployed bytes
+
+Verification is **by byte comparison**, not by `cargo stylus verify`. The engine was built
+reproducibly in cargo-stylus's own Docker image and then deployed with `--wasm-file`, which ships the
+raw wasm without the project metadata hash that `cargo stylus verify` keys off. So the check is
+direct: rebuild in the container and compare hashes.
+
+```bash
+# build reproducibly. Do this on a copy of engine/ outside the repo: the container runs as root and
+# will otherwise leave root-owned artifacts in engine/target/.
+cp -r engine /tmp/engine-repro && rm -rf /tmp/engine-repro/target
+docker run --rm --network host --workdir /source --volume /tmp/engine-repro:/source   cargo-stylus-base-0.10.9-toolchain-1.91.0   cargo stylus check --endpoint https://rpc.mainnet.chain.robinhood.com
+
+sha256sum /tmp/engine-repro/target/wasm32-unknown-unknown/release/exitline_engine.wasm
+# dc7cc13a147f5534b8e559fc4cd32707969c2d459c51c5ea9ae84fbb6864504f  (73,680 bytes)
+```
+
+That image is built by cargo-stylus itself from `offchainlabs/cargo-stylus-base:0.10.9` plus the
+Rust toolchain pinned in `engine/rust-toolchain.toml` (1.91.0); any `cargo stylus` invocation without
+`--no-verify` creates it.
+
+The deployed contract is the brotli-compressed form of that wasm behind Stylus's `0xeff00000`
+prefix, 23,055 bytes in total:
+
+```bash
+cast code 0x276F4933f06B77912384D64291E062885C33E031   --rpc-url https://rpc.mainnet.chain.robinhood.com | tail -c +3 | xxd -r -p | sha256sum
+# 56d052ed92a38b0b32afa03336d301692ce93329027bbbf07c4da744625b70bf  (23,055 bytes)
+```
+
+A local build is deliberately **not** expected to match the container one (73,536 bytes, sha256
+`980bd5b1...4109`): the two embed different build paths. Only the container build reproduces the
+deployed bytes.
 
 Try it against the largest NVDA/USDG pool, where USDG is token0 so the stock is token1:
 
@@ -159,12 +191,16 @@ Rerun the mainnet fork simulation, which is how the guard is demonstrated end to
 contracts/script/fork-netnet-aapl.sh     # measures and runs the fork test at the same block
 ```
 
-That test puts the guard on the real NetNet Credit Vault V2 at fork block 75821799, with the vault
-owner impersonated on the fork only, and feeds it the AAPL depth that `tools/measure` read at that
-block. The AAPL cap goes from 600,000 to 68,336 USDG after five readings, which is the median
-reading at 50 percent coverage of roughly 137,000 USDG of depth within 5 percent. The test then
-confirms the guard cannot raise the cap back, and that the curator restores it only after the three
-day timelock.
+That test puts the guard on the real NetNet Credit Vault V2, with the vault owner impersonated on
+the fork only, and feeds it the AAPL depth that `tools/measure` read at the same block. By default it
+forks the current block, so the exact numbers move with the market; set `FORK_BLOCK` to pin one.
+
+Two runs, for a sense of the shape. At block 75821799 the AAPL cap went from 600,000 to 68,336 USDG,
+the median reading at 50 percent coverage of roughly 137,000 USDG of depth within 5 percent. At block
+77762358 the same cap went to 61,753 USDG against 123,507 USDG of depth. In both, the vault's
+existing allocation to AAPL was about 197,000 USDG, well above the new cap, so the cut stopped new
+lending without touching open positions. Each run then confirms the guard cannot raise the cap back,
+and that the curator restores it only after the three day timelock.
 
 ## Known limits
 
@@ -174,13 +210,14 @@ Stated plainly, because a risk tool that oversells itself is worse than none.
   demo vault were costed at roughly 9.5 million gas and skipped to stay inside the deployer's
   balance. The guard is demonstrated by the fork simulation against real Vault V2 code, not by a
   live installation.
-- **The guard's gas constants need resizing before it can be deployed.** Measured on the deployed
-  engine, the worst case pool (NVDA/USDG, 0.05 percent fee) costs 3,290,900 gas at a 20 percent
-  impact bound and 4,065,590 gas at the 50 percent bound the guard permits, where the walk genuinely
-  reaches the engine's 256 step limit. A correctly sized `engineGasLimit` is therefore about
-  6,098,385, which exceeds the contract's current `MAX_ENGINE_GAS` of 3,500,000. `MAX_ENGINE_GAS`,
-  `MAX_POOLS` and `MAX_IMPACT_BPS` have to be chosen together, and Robinhood Chain's per transaction
-  gas limit still needs confirming.
+- **Robinhood Chain's per transaction gas limit is still unconfirmed.** The guard's gas constants
+  are set from the mainnet measurement: depth may be measured to at most a 20 percent price fall
+  (`MAX_IMPACT_BPS` 2000), a per pool engine budget of at most 6,500,000 (`MAX_ENGINE_GAS`), and at
+  most 3 pools per stock (`MAX_POOLS`). The recommended `engineGasLimit` is 6,100,000, which is the
+  measured 256 step cost of 4,065,590 plus 50 percent. A full measurement therefore costs about
+  18.9 million gas at that budget and about 20.1 million at the ceiling, both under the 32 million
+  per transaction limit of Arbitrum Nitro chains. That 32 million is an assumption about this chain,
+  not a confirmed figure, which is why `MAX_POOLS` is deliberately small.
 - **US market holidays are not in the calendar.** Only weekends are. On a holiday the market counts
   as open unless the stale feed fallback trips, which with a 26 hour floor it usually will not for a
   single day closure.
