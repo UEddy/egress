@@ -31,8 +31,14 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   - `emergencyCut` is permissionless: cuts the cap to 0 while an ERC-8056 corporate action
     (`newUIMultiplier != uiMultiplier`, effective within the window) is pending. Uses only the
     functions documented by Robinhood (`uiMultiplier`, `newUIMultiplier`, `effectiveAt`).
-  - Fails safe: an unreadable pool counts as zero depth; an unreadable or stale oracle applies the
-    closed-market haircut.
+  - Fails safe: an unreadable pool counts as zero depth. The closed-market haircut applies on the
+    weekend calendar (Sat 00:00 to Mon 01:00 UTC, covering Fri 20:00 to Sun 20:00 New York time
+    under both EDT and EST) and, as a fallback, when the feed is unreadable or older than
+    `maxOracleAge` (configure enforces >= 26 h so the feeds' 24 h heartbeat never trips it on a
+    quiet weekday). `isWeekendClosed(ts)` and `marketClosed(stock)` expose the decision.
+  - Known limit: US market holidays (and early closes) are not in the calendar. On a holiday the
+    market counts as open unless the feed fallback trips, which with a 26 h floor it usually won't
+    for a one-day holiday.
   - `GuardFactory.sol`: deploys a guard for any Vault V2 vault. Deploying grants nothing until the
     vault owner calls `setIsSentinel(guard, true)`.
 - `tools/measure/` Rust CLI (reuses `engine::walk` over JSON-RPC, all reads pinned to one block).
@@ -52,16 +58,19 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   price limits, writes `engine/fixtures/*.json`. The Rust tests replay them and require the engine
   to equal the real swap output **to the wei**.
 
-## Status (Sep 28, 2026)
+## Status (Oct 1, 2026)
 
 Done and passing:
-- Guard + factory: 41 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
+- Guard + factory: 50 Foundry tests against Morpho's real Vault V2 code (pinned submodule), incl. fuzz.
   Engine gas budget (Sep 29): each engine call gets exactly `engineGasLimit` (immutable, set via the
   factory, bounded to 100k..3.5M); `record`/`preview` revert `InsufficientGas` unless gasleft() covers
   every pool's budget + 1/63 + call cost + `RECORD_GAS_OVERHEAD` (250k), so a failed pool always
   failed within its full budget. Keepers size calls with `gasRequired(stock)`. Worst case at the
   minimum accepted gas (every pool burning its full budget, cut through real Vault V2) leaves
   ~195k unused. `StepEngine` (test/mocks) burns steps × gasPerStep for calibration.
+  Weekend calendar (Oct 1): replaces the oracle-age-only closed test; edge tests at Fri 15:00 and
+  23:59:59 UTC, Sat 00:00, Sun 23:59:59, Mon 00:00/00:30/00:59:59/01:00 UTC, both EDT and EST weeks;
+  fuzz checks every week has exactly 49 closed hours.
 - Fork simulation (Sep 29, `contracts/test/fork/NetNetAaplFork.t.sol` via
   `contracts/script/fork-netnet-aapl.sh`): guard on the real NetNet Credit Vault V2 (owner
   impersonated on the fork only), mock engine returning tools/measure's AAPL depth at the fork
@@ -144,10 +153,41 @@ MSFT 0xe93237C50D904957Cf27E7B1133b510C669c2e74, QQQ 0xD5f3879160bc7c32ebb4dC785
 SPY 0x117cc2133c37B721F49dE2A7a74833232B3B4C0C, TSLA 0x322F0929c4625eD5bAd873c95208D54E1c003b2d.
 The five addresses above are the collateral of Denar's equity markets and their `symbol()` matches
 onchain (checked by `tools/measure`). USDG is 0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168 (6 decimals),
-token0 of the NVDA/USDG pool, symbol checked. Chainlink stock feed addresses: not yet confirmed.
+token0 of the NVDA/USDG pool, symbol checked.
+
+Chainlink feeds on Robinhood Chain (verified Sep 29, 2026). Source: Chainlink's feed directory
+(reference-data-directory.vercel.app/feeds-robinhood-mainnet.json, the data behind docs.chain.link),
+matched by proxy address; onchain each proxy points at an aggregator reporting "DualAggregator 1.0.0",
+all four proxies have owner 0xeE27D5Ae494300902D90454e8630A3F1C68c9C52. All 8 decimals, heartbeat
+86400 s, deviation 0.5%. Stock feeds are category "custom", market hours us_equities_24/5.
+
+| Feed (directory name) | Proxy | Onchain description | Used by |
+|---|---|---|---|
+| Robinhood AAPL / USD | 0x6B22A786bAa607d76728168703a39Ea9C99f2cD0 | "Robinhood AAPL / USD" | AAPL market 0xdeb4782d… oracle |
+| Robinhood NVDA / USD | 0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15 | "RHNVDA / USD" | NVDA market 0x8b16891f… oracle |
+| Robinhood TSLA / USD | 0x4A1166a659A55625345e9515b32adECea5547C38 | "RHTSLA / USD" | TSLA market 0xb41b34c5… oracle |
+| USDG / USD | 0x61B7e5650328764B076A108EFF5fa7282a1B9aD2 | "USDG / USD" | quote feed of all three |
+
+Feeds update on a 0.5% move or every 24 h, so an hours-old stock feed during market hours is normal
+(AAPL was 2 h 50 m old at 17:18 UTC on Sep 29). For the guard's `maxOracleAge`, age alone is a weak
+"market closed" signal: setting it under the heartbeat flags quiet open markets as closed (the safe
+direction: a stricter haircut, never a looser one).
+
+Oracles of the main stock markets on canonical Blue (read at block 75829408):
+- TSLA market 0xb41b34c5…: oracle 0xca76875634e0b9759aa6610dc3092e92fcefe46e is a
+  MorphoChainlinkOracleV2 (confirmed by the Morpho Chainlink oracle factory
+  0xB7c16F6F8cF531447Bf27Ca7220f981E79C9cdF2, morpho-org/sdks): BASE_FEED_1 = TSLA/USD,
+  QUOTE_FEED_1 = USDG/USD, no vaults, SCALE_FACTOR 1e24.
+- AAPL market 0xdeb4782d… (oracle 0xD625d488D552775D2867194C618B945E5dDfE097) and NVDA market
+  0x8b16891f… (oracle 0xed29d310cfa91778a5850538da28ed42234cb78c) use the same custom oracle (identical
+  2,563-byte code, not from Morpho's factory): baseFeed() = stock/USD, quoteFeed() = USDG/USD,
+  MAX_QUOTE_AGE 90,000 s. Three unnamed getters return 0.8e18, 1.2e18 and 349,200 s; likely USDG
+  price bounds and a max base age (~4 days), not confirmed.
+
 Public RPC: https://rpc.mainnet.chain.robinhood.com. Rate limited (JSON-RPC batches of 20 pass,
 100 do not) and not an archive node: it keeps state for roughly 4,000-8,000 blocks (~7-13 min), so a
 pinned-block run must finish inside that window. A full `--verify` run with lenders takes ~4.5 min.
+Since Sep 29 eth_getLogs ranges are capped at 10M blocks; tools/measure splits them.
 
 Denar's equity vault is MetaMorpho V1, which has no sentinel role. Exitline supports Vault V2 only.
 Do not design around holding a curator role.
