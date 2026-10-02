@@ -52,8 +52,15 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   `markets <TOKEN>` lists every canonical Blue market with TOKEN as collateral: params, accrued
   totals, borrower count, suppliers classified via the Vault V2 / adapter factory registries, and a
   check that collateral over all positions equals `token.balanceOf(Blue)`.
-  JSON output never contains individual addresses: borrowers, non-vault suppliers and per-borrower
-  contracts (Arcadia accounts, Gage loan accounts, Turret offer vaults) are left out.
+  JSON output never identifies an individual. Borrowers are a count with debt and collateral only,
+  and non-vault suppliers carry no address. Per-borrower contracts (Arcadia margin accounts, Gage
+  loan accounts, Turret offer vaults) are NOT emitted as rows at all: `lenders::report` folds them
+  into one aggregated row per protocol and stock, with a count and summed figures. Omitting just
+  the address was not enough, because `how` used to carry the account index or loan number, which
+  resolves back through the factory or engine (`allAccounts(i)`, then `ownerOf(i)`), and even
+  without an index an exact per-contract balance can be matched by enumerating the accounts.
+  History was rewritten on Oct 2, 2026 to replace every past version of the one affected file,
+  `results/denar-74197325.json`, with the aggregated form.
 - `web/` Dashboard: Vite + React + TypeScript + viem, a static build for Vercel's free tier.
   Only viem's `encodeFunctionData`/`decodeFunctionResult` are imported, with plain `fetch` for the
   one eth_call; `createPublicClient` cost more than the rest of the bundle put together (JS went

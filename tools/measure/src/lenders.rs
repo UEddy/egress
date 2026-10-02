@@ -56,8 +56,14 @@ pub struct Holder {
     pub protocol: usize,
     pub address: Address,
     pub how: String,
-    /// One contract per borrower (loan account, margin account, offer vault). Its address
-    /// identifies an individual, so reports leave it out.
+    /// One contract per borrower (loan account, margin account, offer vault).
+    ///
+    /// Its address identifies an individual, and so does anything that recovers that address: an
+    /// account index or loan number resolves straight back through the factory or engine, and even
+    /// without one an exact per-contract balance can be matched by enumerating them. So these are
+    /// never written out singly. `report` folds them into one aggregated row per protocol and
+    /// stock, carrying the protocol name, a count, and summed figures. Nothing that reaches a
+    /// report identifies a person.
     pub per_borrower: bool,
 }
 
@@ -101,10 +107,10 @@ pub fn discover(rpc: &Rpc, inv: &Inventory, stocks: &[Address], notes: &mut Vec<
             let n = rpc.call(engine, ILenders::loanCountCall {})?.to::<u64>();
             // Loan ids are local to an engine and start at 1.
             let calls = (1..=n).map(|i| (engine, ILenders::getLoanCall { id: U256::from(i) })).collect();
-            for (i, r) in rpc.call_many(calls)?.into_iter().enumerate() {
+            for r in rpc.call_many(calls)? {
                 let loan = r?;
                 if stocks.contains(&loan.token) {
-                    add(loan.account, format!("account of loan #{} at engine {engine}", i + 1), true);
+                    add(loan.account, format!("loan account at engine {engine}"), true);
                 }
             }
         }
@@ -112,15 +118,15 @@ pub fn discover(rpc: &Rpc, inv: &Inventory, stocks: &[Address], notes: &mut Vec<
             // nextOfferId is exclusive; offer ids start at 1.
             let next = rpc.call(market, ILenders::nextOfferIdCall {})?.to::<u64>();
             let calls = (1..next).map(|i| (market, ILenders::vaultsCall { id: U256::from(i) })).collect();
-            for (i, r) in rpc.call_many(calls)?.into_iter().enumerate() {
-                add(r?, format!("vault of offer #{} at market {market}", i + 1), true);
+            for r in rpc.call_many(calls)? {
+                add(r?, format!("offer vault at market {market}"), true);
             }
         }
         for &factory in &p.arcadia_factories {
             let n = rpc.call(factory, ILenders::allAccountsLengthCall {})?.to::<u64>();
             let calls = (0..n).map(|i| (factory, ILenders::allAccountsCall { i: U256::from(i) })).collect();
-            for (i, r) in rpc.call_many(calls)?.into_iter().enumerate() {
-                add(r?, format!("account #{i} of factory {factory}"), true);
+            for r in rpc.call_many(calls)? {
+                add(r?, format!("margin account from factory {factory}"), true);
             }
         }
         for f in &p.termmax_factories {
@@ -170,9 +176,14 @@ pub fn discover(rpc: &Rpc, inv: &Inventory, stocks: &[Address], notes: &mut Vec<
 #[derive(Serialize)]
 pub struct Holding {
     pub protocol: String,
-    /// None for per-borrower contracts, which `how` still locates by index.
+    /// The holding contract, when naming it identifies no one. None on an aggregated row.
     pub holder: Option<Address>,
+    /// How the contract was found. On an aggregated row this names the protocol's mechanism only:
+    /// it carries no index, no loan number, and nothing else that resolves to an individual.
     pub how: String,
+    /// How many per-borrower contracts the row sums over. None on a single-contract row.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contracts: Option<usize>,
     pub stock: String,
     pub balance: String,
     /// Balance at the pricing pool's spot price, in USDG units, rounded down.
@@ -238,6 +249,10 @@ pub fn report(c: Collected, inv: &Inventory, stocks: &[Priced]) -> Result<Lender
 
     let mut holdings = Vec::new();
     let mut totals: Vec<BTreeMap<String, (U256, Option<U256>)>> = vec![BTreeMap::new(); inv.protocols.len()];
+    // Per-borrower contracts never get a row of their own: a single row would carry that one
+    // borrower's exact balance, which is enough to find them by enumerating the protocol's
+    // accounts. They are summed here, keyed by protocol and stock, and emitted as one row each.
+    let mut aggregated: BTreeMap<(usize, String), (U256, Option<U256>, usize)> = BTreeMap::new();
     for (si, s) in stocks.iter().enumerate() {
         for (hi, h) in holders.iter().enumerate() {
             let bal = balances[si * holders.len() + hi];
@@ -251,15 +266,41 @@ pub fn report(c: Collected, inv: &Inventory, stocks: &[Priced]) -> Result<Lender
                 (Some(a), Some(b)) => Some(a + b),
                 _ => None,
             };
+            if h.per_borrower {
+                let a = aggregated
+                    .entry((h.protocol, s.symbol.to_string()))
+                    .or_insert((U256::ZERO, Some(U256::ZERO), 0));
+                a.0 += bal;
+                a.1 = match (a.1, value) {
+                    (Some(x), Some(y)) => Some(x + y),
+                    _ => None,
+                };
+                a.2 += 1;
+                continue;
+            }
             holdings.push(Holding {
                 protocol: inv.protocols[h.protocol].name.clone(),
-                holder: (!h.per_borrower).then_some(h.address),
+                holder: Some(h.address),
                 how: h.how.clone(),
+                contracts: None,
                 stock: s.symbol.to_string(),
                 balance: bal.to_string(),
                 value: value.map(|v| v.to_string()),
             });
         }
+    }
+
+    // One row per protocol and stock, in a deterministic order, with no address and no index.
+    for ((pi, stock), (bal, value, n)) in aggregated {
+        holdings.push(Holding {
+            protocol: inv.protocols[pi].name.clone(),
+            holder: None,
+            how: "per-borrower contracts, aggregated".into(),
+            contracts: Some(n),
+            stock,
+            balance: bal.to_string(),
+            value: value.map(|v| v.to_string()),
+        });
     }
 
     let protocols = inv
