@@ -210,6 +210,8 @@ and that the curator restores it only after the three day timelock.
 
 ## Dashboard
 
+Live at **https://egress-theta.vercel.app**
+
 A static site in `web/` (Vite, React, TypeScript, viem) showing the measured position: total stock
 collateral held by lending contracts, the AAPL gap, and every stock's lent amount against sellable
 depth at 5, 10 and 20 percent, flagged where lending exceeds depth.
@@ -265,6 +267,17 @@ composed file is what the site ships, and the Check live button is what proves t
 The build output is a plain static directory, so any static host serves it. On Vercel the Vite preset
 needs no configuration beyond the `web` root directory.
 
+## Explainer video
+
+`video/` is a Remotion project that renders a 2:30 explainer at 1920x1080. It imports
+`web/public/snapshot.json` at build time, so every figure on screen is the same measured data the
+dashboard shows, and parses the fork simulation's own output for the cap figures. See
+`video/README.md` for how to render it and how the two embedded recordings are produced.
+
+```bash
+cd video && npm install && npm run render   # writes video/out/egress.mp4
+```
+
 ## Known limits
 
 Stated plainly, because a risk tool that oversells itself is worse than none.
@@ -302,4 +315,5 @@ contracts/     Solidity 0.8.28, the sentinel guard and its factory (Foundry)
 crosscheck/    Solidity 0.7.6 with real Uniswap v3-core, generates test fixtures
 tools/measure/ Rust CLI for onchain depth, lender inventory, market listings and the snapshot
 web/           Dashboard: static Vite, React and TypeScript site, reads the snapshot
+video/         Remotion explainer video, renders from the same snapshot
 ```

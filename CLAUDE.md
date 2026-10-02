@@ -70,6 +70,7 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   History was rewritten on Oct 2, 2026 to replace every past version of the one affected file,
   `results/denar-74197325.json`, with the aggregated form.
 - `web/` Dashboard: Vite + React + TypeScript + viem, a static build for Vercel's free tier.
+  Deployed at https://egress-theta.vercel.app.
   Only viem's `encodeFunctionData`/`decodeFunctionResult` are imported, with plain `fetch` for the
   one eth_call; `createPublicClient` cost more than the rest of the bundle put together (JS went
   from 135 KB gzipped to 67 KB when it was dropped). Inter is self hosted, one variable woff2 subset
@@ -230,6 +231,15 @@ Done and passing:
   `test_calibratedFullStepWalkFitsRecommendedBudget`, drives the calibrated mock for a full 256-step
   walk and requires it to fit the 6.1M budget and count as real depth (it burns ~11.4M gas in the
   test). 51 Foundry tests pass, plus 5 crosscheck, 22 engine and the fork simulation.
+
+- `video/` Remotion 4 explainer, 1920x1080, 30fps, 4500 frames (2:30), rendered to
+  `video/out/egress.mp4` with `npm run render`. Imports `web/public/snapshot.json` at build time and
+  `video/src/data/fork-result.json` (parsed from a real fork-netnet-aapl.sh run), so no figure is
+  typed by hand; the "63 of 63" readings number is derived as pools x impact bounds. Scenes cross
+  dissolve 15 frames, because without the overlap every scene opened on an empty frame. `out/` and
+  the two recorded clips (`public/live-check.mp4`, `public/fork-sim.mp4`) are gitignored; see
+  video/README.md for how to recreate them. Remotion downloads its own Chrome Headless Shell on
+  first render, and needs the same libnss3/libnspr4/libasound2 shim as Lighthouse on this box.
 
 Not done (in order):
 2. Confirm Robinhood Chain's per-transaction gas limit. The gas constants are now set (see above)
