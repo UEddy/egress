@@ -55,10 +55,15 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   JSON output never identifies an individual. Borrowers are a count with debt and collateral only,
   and non-vault suppliers carry no address. Per-borrower contracts (Arcadia margin accounts, Gage
   loan accounts, Turret offer vaults) are NOT emitted as rows at all: `lenders::report` folds them
-  into one aggregated row per protocol and stock, with a count and summed figures. Omitting just
-  the address was not enough, because `how` used to carry the account index or loan number, which
-  resolves back through the factory or engine (`allAccounts(i)`, then `ownerOf(i)`), and even
-  without an index an exact per-contract balance can be matched by enumerating the accounts.
+  into one aggregated row per protocol and stock, with a count and summed figures, and only when at
+  least TWO contracts are covered. Omitting just the address was not enough, because `how` used to
+  carry the account index or loan number, which resolves back through the factory or engine
+  (`allAccounts(i)`, then `ownerOf(i)`), and even without an index an exact per-contract balance can
+  be matched by enumerating the accounts. An aggregate of one is not an aggregate either, so a
+  single-contract group is dropped, and its stock is withheld from that protocol's `by_stock`
+  breakdown when nothing else holds it, since the breakdown would otherwise carry the identical
+  number. The amount still counts towards the protocol's `value`, so totals reconcile. In the
+  Sep 27 snapshot this withholds Arcadia V2's AAPL, QQQ and SPY figures, worth about $9 in total.
   History was rewritten on Oct 2, 2026 to replace every past version of the one affected file,
   `results/denar-74197325.json`, with the aggregated form.
 - `web/` Dashboard: Vite + React + TypeScript + viem, a static build for Vercel's free tier.

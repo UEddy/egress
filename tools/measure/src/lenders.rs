@@ -2,7 +2,7 @@
 //! where they came from; the contracts that actually custody collateral (aTokens, loan accounts,
 //! per-offer vaults, margin accounts, gearing tokens) are derived onchain at the pinned block.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use alloy_primitives::{Address, B256, U256};
 use serde::{Deserialize, Serialize};
@@ -253,6 +253,10 @@ pub fn report(c: Collected, inv: &Inventory, stocks: &[Priced]) -> Result<Lender
     // borrower's exact balance, which is enough to find them by enumerating the protocol's
     // accounts. They are summed here, keyed by protocol and stock, and emitted as one row each.
     let mut aggregated: BTreeMap<(usize, String), (U256, Option<U256>, usize)> = BTreeMap::new();
+    // How many named contracts also hold this stock for this protocol. Used below: a figure that
+    // comes from exactly one per-borrower contract and nothing else IS that borrower's balance,
+    // however it is labelled, so it is withheld rather than published.
+    let mut named_count: BTreeMap<(usize, String), usize> = BTreeMap::new();
     for (si, s) in stocks.iter().enumerate() {
         for (hi, h) in holders.iter().enumerate() {
             let bal = balances[si * holders.len() + hi];
@@ -278,6 +282,7 @@ pub fn report(c: Collected, inv: &Inventory, stocks: &[Priced]) -> Result<Lender
                 a.2 += 1;
                 continue;
             }
+            *named_count.entry((h.protocol, s.symbol.to_string())).or_insert(0) += 1;
             holdings.push(Holding {
                 protocol: inv.protocols[h.protocol].name.clone(),
                 holder: Some(h.address),
@@ -290,8 +295,19 @@ pub fn report(c: Collected, inv: &Inventory, stocks: &[Priced]) -> Result<Lender
         }
     }
 
-    // One row per protocol and stock, in a deterministic order, with no address and no index.
+    // An aggregate of one is not an aggregate: with a single per-borrower contract the row would
+    // carry that borrower's exact balance, which can be matched by enumerating the protocol's
+    // accounts. Such a row is dropped, and the stock is withheld from the protocol's breakdown too
+    // when nothing else holds it, since the breakdown would carry the same number. The amount still
+    // counts towards the protocol's total value, so the totals continue to reconcile.
+    let mut withheld: BTreeSet<(usize, String)> = BTreeSet::new();
     for ((pi, stock), (bal, value, n)) in aggregated {
+        if n < 2 {
+            if named_count.get(&(pi, stock.clone())).copied().unwrap_or(0) == 0 {
+                withheld.insert((pi, stock));
+            }
+            continue;
+        }
         holdings.push(Holding {
             protocol: inv.protocols[pi].name.clone(),
             holder: None,
@@ -315,6 +331,7 @@ pub fn report(c: Collected, inv: &Inventory, stocks: &[Priced]) -> Result<Lender
                 holders_checked: holders.iter().filter(|h| h.protocol == pi).count(),
                 by_stock: totals[pi]
                     .iter()
+                    .filter(|(k, _)| !withheld.contains(&(pi, (*k).clone())))
                     .map(|(k, (b, v))| (k.clone(), (b.to_string(), v.map(|v| v.to_string()))))
                     .collect(),
                 value: value.to_string(),
