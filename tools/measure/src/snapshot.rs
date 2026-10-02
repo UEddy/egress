@@ -382,15 +382,19 @@ pub fn run(
     let lender_report = lenders::report(collected?, &inventory, &priced)?;
     eprintln!("lenders: {} holder contracts checked", lender_report.holders_checked);
 
-    // Per stock lender totals, summed from the holdings the scan found.
+    // Per stock lender totals, taken from each protocol's breakdown rather than by summing the
+    // holding rows. Rows are only emitted where naming something identifies nobody, so they no
+    // longer add up to the whole: a single per-borrower contract gets no row at all.
     let mut lent_units: BTreeMap<String, U256> = BTreeMap::new();
     let mut lent_value: BTreeMap<String, U256> = BTreeMap::new();
-    for h in &lender_report.holdings {
-        *lent_units.entry(h.stock.clone()).or_default() +=
-            h.balance.parse::<U256>().map_err(|e| format!("holding balance: {e}"))?;
-        if let Some(v) = &h.value {
-            *lent_value.entry(h.stock.clone()).or_default() +=
-                v.parse::<U256>().map_err(|e| format!("holding value: {e}"))?;
+    for p in &lender_report.protocols {
+        for (sym, (bal, val)) in &p.by_stock {
+            *lent_units.entry(sym.clone()).or_default() +=
+                bal.parse::<U256>().map_err(|e| format!("protocol balance: {e}"))?;
+            if let Some(v) = val {
+                *lent_value.entry(sym.clone()).or_default() +=
+                    v.parse::<U256>().map_err(|e| format!("protocol value: {e}"))?;
+            }
         }
     }
 
@@ -573,14 +577,19 @@ pub fn from_results(
             }
         }
     }
+    // From each protocol's breakdown, not by summing holding rows: rows are only emitted where
+    // naming something identifies nobody, so they do not add up to the whole.
     let mut lent_units: BTreeMap<String, U256> = BTreeMap::new();
     let mut lent_value: BTreeMap<String, U256> = BTreeMap::new();
-    for h in obj(lr, "holdings", lenders_file)?.as_array().ok_or("holdings is not an array")? {
-        let sym = as_str(h, "stock", lenders_file)?;
-        let bal: U256 = as_str(h, "balance", lenders_file)?.parse().map_err(|_| "bad balance")?;
-        *lent_units.entry(sym.clone()).or_default() += bal;
-        if let Some(v) = h.get("value").and_then(|v| v.as_str()) {
-            *lent_value.entry(sym).or_default() += v.parse::<U256>().map_err(|_| "bad value")?;
+    for p in obj(lr, "protocols", lenders_file)?.as_array().ok_or("protocols is not an array")? {
+        let by = obj(p, "by_stock", lenders_file)?.as_object().ok_or("by_stock is not an object")?;
+        for (sym, pair) in by {
+            let bal: U256 =
+                pair.get(0).and_then(|b| b.as_str()).unwrap_or("0").parse().map_err(|_| "bad balance")?;
+            *lent_units.entry(sym.clone()).or_default() += bal;
+            if let Some(v) = pair.get(1).and_then(|v| v.as_str()) {
+                *lent_value.entry(sym.clone()).or_default() += v.parse::<U256>().map_err(|_| "bad value")?;
+            }
         }
     }
 
