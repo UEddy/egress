@@ -4,11 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0e13" />
     <meta
       name="description"
       content="Exitline measures onchain how much tokenized stock could actually be sold in a crash, and stops lending that outgrows it."
     />
-    <title>Exitline</title>
+    <title>Exitline, depth aware lending limits for tokenized stock</title>
+
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+
+    <script>
+      // Set before first paint. The reveal animation only hides content when scripting is on, so a
+      // page without JavaScript still shows everything rather than a blank screen.
+      document.documentElement.classList.add('js')
+    </script>
   </head>
   <body>
     <div id="root"></div>

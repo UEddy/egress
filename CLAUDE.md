@@ -55,6 +55,14 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   JSON output never contains individual addresses: borrowers, non-vault suppliers and per-borrower
   contracts (Arcadia accounts, Gage loan accounts, Turret offer vaults) are left out.
 - `web/` Dashboard: Vite + React + TypeScript + viem, a static build for Vercel's free tier.
+  Only viem's `encodeFunctionData`/`decodeFunctionResult` are imported, with plain `fetch` for the
+  one eth_call; `createPublicClient` cost more than the rest of the bundle put together (JS went
+  from 135 KB gzipped to 67 KB when it was dropped). Inter is self hosted, one variable woff2 subset
+  to latin, preloaded, OFL in `public/fonts/OFL.txt`. Motion is transform and opacity only, with
+  `prefers-reduced-motion` fully honoured (verified by emulating the media feature, not assumed).
+  Grid tracks use `minmax(0, Nfr)`: a bare `fr` has an auto minimum, so the live result arriving
+  would widen its column and shift the row. Lighthouse mobile: performance 99, accessibility 100,
+  best practices 100, SEO 100, CLS 0.
   Renders from `web/public/snapshot.json` (imported at build time, so the page needs no network to
   draw) and shows the block the snapshot was taken at. A "Check live" button per stock calls the
   deployed engine's `sellProceeds` at 5% on each of that stock's pools, on click only, one stock at
@@ -331,6 +339,12 @@ cargo run --release -- snapshot          # one pinned block; does not currently 
 cargo run --release -- snapshot --from-results results   # offline compose, what the repo ships
 #   the live form sends state reads to $ROBINHOOD_RPC_URL and eth_getLogs to the public endpoint
 cd ../../web && npm install && npm run build && npm run preview   # static build, then a local preview
+# Lighthouse and screenshots need a browser. This box has no unzip and no passwordless sudo, so:
+#   npm i -D lighthouse puppeteer yauzl && npx puppeteer browsers install chrome
+#   (yauzl is required: without unzip the Chrome download cannot be extracted)
+# Chrome then needs libnss3, libnspr4 and libasound2, which can be unpacked without root:
+#   apt-get download libnss3 libnspr4 libasound2t64 && dpkg-deb -x <each>.deb root/
+#   LD_LIBRARY_PATH=<dir with the .so files> node your-lighthouse-script.mjs
 cd ../.. && contracts/script/fork-netnet-aapl.sh   # measure + fork test at the same block (~30 s)
 # how the deployed engine was built and shipped (see the status notes before reusing this):
 #   build reproducibly on a copy outside the repo, since the container writes artifacts as root
