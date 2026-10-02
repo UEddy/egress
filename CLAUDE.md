@@ -233,9 +233,15 @@ Done and passing:
   test). 51 Foundry tests pass, plus 5 crosscheck, 22 engine and the fork simulation.
 
 - `video/` Remotion 4 explainer, 1920x1080, 30fps, 4500 frames (2:30), rendered to
-  `video/out/egress.mp4` with `npm run render`. Imports `web/public/snapshot.json` at build time and
-  `video/src/data/fork-result.json` (parsed from a real fork-netnet-aapl.sh run), so no figure is
-  typed by hand; the "63 of 63" readings number is derived as pools x impact bounds. Scenes cross
+  `video/out/egress.mp4` with `npm run render`. Imports `web/public/snapshot.json`,
+  `tools/measure/results/engine-crosscheck-77749579.json` and `video/src/data/fork-result.json` at
+  build time, so no figure is typed by hand. The "63 of 63" number is READ from
+  `engine_verification` in the cross-check file, written by `egress-measure verify-engine`, which
+  re-asks the deployed engine every reading at that file's pinned block and records matched and
+  mismatched. Do not derive it from pools x bounds: the point is that it is a record of a run.
+  fork-sim.mp4 is a real PTY capture of the fork script via script(1), converted to asciicast v2 and
+  replayed with asciinema-player at 4x, with "sped up 4x", the fork block and the result file path
+  shown on screen. Scenes cross
   dissolve 15 frames, because without the overlap every scene opened on an empty frame. `out/` and
   the two recorded clips (`public/live-check.mp4`, `public/fork-sim.mp4`) are gitignored; see
   video/README.md for how to recreate them. Remotion downloads its own Chrome Headless Shell on

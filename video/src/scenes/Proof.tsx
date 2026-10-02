@@ -2,7 +2,7 @@ import { Video } from '@remotion/media'
 import { interpolate, staticFile, useCurrentFrame } from 'remotion'
 import { C, MONO, tnum } from '../theme'
 import { Caption, Eyebrow, Headline, Rise, Scene } from '../ui'
-import { CHAIN_ID, ENGINE, READINGS, TIGHTEST_PCT } from '../data'
+import { CHAIN_ID, DEPTH_BLOCK, ENGINE, TIGHTEST_PCT, VERIFY } from '../data'
 
 /** 1:25 to 1:45. The engine is live, the readings match real swaps, and here it is running. */
 export const Proof: React.FC = () => {
@@ -36,15 +36,17 @@ export const Proof: React.FC = () => {
         <Rise at={86} dur={20}>
           <div style={{ marginTop: 28, fontSize: 52, fontWeight: 640 }}>
             <span style={{ color: C.accent, ...tnum }}>
-              {READINGS} of {READINGS}
+              {VERIFY.matched} of {VERIFY.cases}
             </span>{' '}
             live readings match real swaps to the wei.
+            {VERIFY.mismatched === 0 ? ' Nothing mismatched.' : ` ${VERIFY.mismatched} mismatched.`}
           </div>
         </Rise>
 
         <div style={{ marginTop: 14 }}>
           <Caption at={120}>
-            Every pool, at every bound, checked against the pool's own swap inside an eth_call.
+            Every pool at every bound, re-asked of the deployed engine at block{' '}
+            {VERIFY.block.toLocaleString('en-US')} and recorded in {VERIFY.file}.
           </Caption>
         </div>
       </div>
@@ -71,11 +73,16 @@ export const Proof: React.FC = () => {
             bottom: 0,
             padding: '110px 130px 54px',
             background: `linear-gradient(to top, ${C.bg} 22%, transparent)`,
-            fontSize: 38,
-            fontWeight: 600,
           }}
         >
-          Check it yourself: the dashboard calls the deployed engine live, at {TIGHTEST_PCT}, from your browser.
+          <div style={{ fontSize: 38, fontWeight: 600 }}>
+            Check it yourself: the dashboard calls the deployed engine live, at {TIGHTEST_PCT}, from
+            your browser.
+          </div>
+          <div style={{ fontSize: 29, color: C.dim, marginTop: 12, fontFamily: MONO, ...tnum }}>
+            snapshot block {DEPTH_BLOCK.toLocaleString('en-US')} vs live: the difference is depth
+            moving between blocks, not an error.
+          </div>
         </div>
       </div>
     </Scene>

@@ -1,6 +1,6 @@
 import { Video } from '@remotion/media'
 import { interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from 'remotion'
-import { C, tnum } from '../theme'
+import { C, MONO, tnum } from '../theme'
 import { Counter, Eyebrow, Headline, Rise, Scene } from '../ui'
 import { FORK, fmt } from '../data'
 
@@ -8,7 +8,7 @@ import { FORK, fmt } from '../data'
 export const InAction: React.FC = () => {
   const frame = useCurrentFrame()
   const { fps } = useVideoConfig()
-  const drop = spring({ frame: frame - 470, fps, durationInFrames: 36, config: { damping: 200 } })
+  const drop = spring({ frame: frame - 552, fps, durationInFrames: 36, config: { damping: 200 } })
 
   return (
     <Scene pad={0}>
@@ -19,15 +19,56 @@ export const InAction: React.FC = () => {
         </Headline>
       </div>
 
-      {/* The actual run. Nothing staged: this is the script's own output. */}
+      {/* The actual run, captured in a PTY with script(1) and replayed. Nothing is staged. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          opacity: interpolate(frame, [104, 126, 404, 428], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
+          opacity: interpolate(frame, [104, 126, 486, 510], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
         }}
       >
         <Video src={staticFile('fork-sim.mp4')} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+
+        {/* Say plainly that the playback is faster than the run, and where the figures live. */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 46,
+            right: 60,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            backgroundColor: C.accentDim,
+            color: C.accent,
+            borderRadius: 999,
+            padding: '12px 26px',
+            fontSize: 28,
+            fontWeight: 620,
+            ...tnum,
+          }}
+        >
+          sped up {FORK.playbackSpeed}x
+          <span style={{ color: C.dim, fontWeight: 500 }}>
+            real run {FORK.realDurationSeconds}s
+          </span>
+        </div>
+
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            padding: '70px 60px 26px',
+            background: `linear-gradient(to top, ${C.bg} 42%, transparent)`,
+            fontFamily: MONO,
+            fontSize: 25,
+            color: C.dim,
+            ...tnum,
+          }}
+        >
+          fork block {FORK.block.toLocaleString('en-US')} &middot; figures recorded in {FORK.file}
+        </div>
       </div>
 
       {/* The figures that run produced. */}
@@ -39,7 +80,7 @@ export const InAction: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          opacity: interpolate(frame, [418, 444], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
+          opacity: interpolate(frame, [500, 526], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
         }}
       >
         <div style={{ fontSize: 30, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.dim, fontWeight: 600 }}>
@@ -57,8 +98,8 @@ export const InAction: React.FC = () => {
             style={{
               fontSize: 90,
               color: C.dim,
-              opacity: interpolate(frame, [462, 480], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
-              translate: `${interpolate(frame, [462, 486], [-22, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}px 0px`,
+              opacity: interpolate(frame, [544, 562], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
+              translate: `${interpolate(frame, [544, 568], [-22, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}px 0px`,
             }}
           >
             &rarr;
@@ -66,7 +107,7 @@ export const InAction: React.FC = () => {
           <div>
             <div style={{ fontSize: 28, color: C.dim, marginBottom: 10 }}>Cap after five readings</div>
             <div style={{ fontSize: 110, fontWeight: 650, letterSpacing: '-0.03em', color: C.accent, ...tnum }}>
-              <Counter to={FORK.capAfter} at={470} dur={38} />
+              <Counter to={FORK.capAfter} at={552} dur={38} />
             </div>
           </div>
         </div>
@@ -91,7 +132,7 @@ export const InAction: React.FC = () => {
           />
         </div>
 
-        <Rise at={520} dur={22}>
+        <Rise at={602} dur={22}>
           <div style={{ marginTop: 44, fontSize: 38, color: C.dim, lineHeight: 1.45, maxWidth: 1500 }}>
             Against {fmt(FORK.depth)} USDG of depth within 5%, with {fmt(FORK.allocation)} USDG already lent.
             The new cap sits below what is already outstanding, so the cut stops new lending and leaves

@@ -4,6 +4,7 @@
 //   ../web/public/snapshot.json  the dashboard's committed data, imported at build time
 //   ./data/fork-result.json      parsed from a real run of contracts/script/fork-netnet-aapl.sh
 import snapshot from '../../web/public/snapshot.json'
+import crosscheck from '../../tools/measure/results/engine-crosscheck-77749579.json'
 import fork from './data/fork-result.json'
 
 type Stock = (typeof snapshot.stocks)[number]
@@ -62,9 +63,20 @@ export const TOTAL = {
   block: blockOf('lenders'),
 }
 
-/** Every pool the cross-check covered, at every impact bound: the readings that matched real swaps. */
-export const READINGS =
-  snapshot.stocks.reduce((n, s) => n + s.pools.length, 0) * snapshot.impacts_bps.length
+/**
+ * The verification tally, read from the committed cross-check file rather than recomputed.
+ * `egress-measure verify-engine` asked the deployed engine every reading that file records, at its
+ * pinned block, and wrote the result back as `engine_verification`. Quoting it from there means the
+ * figure on screen is a record of a run, not an assumption about how many readings there ought to be.
+ */
+export const VERIFY = {
+  cases: crosscheck.engine_verification.cases,
+  matched: crosscheck.engine_verification.matched,
+  mismatched: crosscheck.engine_verification.mismatched,
+  block: crosscheck.engine_verification.block,
+  engine: crosscheck.engine_verification.engine,
+  file: 'tools/measure/results/engine-crosscheck-77749579.json',
+}
 
 export const ENGINE = snapshot.engine
 export const CHAIN_ID = snapshot.chain_id
@@ -78,7 +90,10 @@ export const BY_EXPOSURE = [...snapshot.stocks].sort(
 )
 
 export const FORK = {
+  file: 'video/src/data/fork-result.json',
   block: fork.block,
+  realDurationSeconds: fork.recording.real_duration_seconds,
+  playbackSpeed: fork.recording.playback_speed,
   capBefore: Number(fork.cap_before_usdg),
   capAfter: Number(fork.cap_after_usdg),
   depth: Number(fork.sellable_within_5pct_usdg),

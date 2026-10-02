@@ -1,13 +1,18 @@
 {
   "source": "contracts/script/fork-netnet-aapl.sh",
-  "note": "A real run against a mainnet fork of the NetNet Credit Vault V2. Parsed from the run output, not typed by hand.",
-  "block": 78293070,
+  "note": "A real run against a mainnet fork of the NetNet Credit Vault V2, captured in a PTY with script(1) and parsed from that capture. The recording in video/public/fork-sim.mp4 is the same session replayed from fork.cast.",
+  "block": 78321955,
   "market_state": "open",
-  "sellable_within_5pct_usdg": "156288.561366",
+  "sellable_within_5pct_usdg": "151389.971102",
   "allocation_usdg": "197160.584588",
   "cap_before_usdg": "600000.000000",
-  "cap_after_usdg": "78144.280683",
+  "cap_after_usdg": "75694.985551",
   "timelock_seconds": 259200,
   "cap_after_curator_raise_usdg": "600000.000000",
-  "captured_at_utc": "2026-10-02T14:14:27Z"
+  "recording": {
+    "method": "script(1) PTY capture, converted to asciicast v2, replayed with asciinema-player",
+    "real_duration_seconds": 38.21,
+    "playback_speed": 4
+  },
+  "captured_at_utc": "2026-10-02T15:01:28Z"
 }

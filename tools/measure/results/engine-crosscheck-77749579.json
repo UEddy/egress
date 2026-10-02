@@ -1,921 +1,930 @@
 {
-  "chain_id": 4663,
   "block": 77749579,
-  "timestamp": 1790895405,
-  "usdg": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "morpho_blue": "0xf0a0a33729270586cdd66010b1cede649745c3a5",
-  "vault": "0xf0e6ad006080c48766ddb95b8c568d72bc059050",
+  "chain_id": 4663,
+  "engine_verification": {
+    "block": 77749579,
+    "cases": 63,
+    "engine": "0x276F4933f06B77912384D64291E062885C33E031",
+    "matched": 63,
+    "mismatch_detail": [],
+    "mismatched": 0,
+    "note": "Each case is one pool at one impact bound. `matched` means the deployed engine returned exactly what this file records for that case, to the wei."
+  },
   "impacts_bps": [
     500,
     1000,
     2000
   ],
-  "verified": true,
+  "lenders": null,
+  "morpho_blue": "0xf0a0a33729270586cdd66010b1cede649745c3a5",
+  "notes": [
+    "Uniswap V4 pools are not counted, so sellable depth is a lower bound.",
+    "Sellable totals assume each pool is sold into up to the bound at the same time."
+  ],
   "stocks": [
     {
-      "stock": "0x117cc2133c37b721f49de2a7a74833232b3b4c0c",
-      "symbol": "SPY",
-      "listed": true,
-      "decimals": 18,
-      "markets": [
-        {
-          "id": "0xf24077f2777a4b87110cf317c629c34e8096e79d580ee319cb5205937dd0cb16",
-          "oracle": "0xd2d04d0e5886fc3bb47bde1e7571fb83d187cff7",
-          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
-          "lltv_wad": "770000000000000000",
-          "vault_cap": "10000000000",
-          "borrowed": "190001341",
-          "accrued": true,
-          "oracle_price": "766080924790000679792943749"
-        }
-      ],
       "borrowed": "190001341",
-      "vault_cap": "10000000000",
       "collateral": "655513181873854977",
       "collateral_value": "502176144",
+      "decimals": 18,
+      "listed": true,
+      "markets": [
+        {
+          "accrued": true,
+          "borrowed": "190001341",
+          "id": "0xf24077f2777a4b87110cf317c629c34e8096e79d580ee319cb5205937dd0cb16",
+          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
+          "lltv_wad": "770000000000000000",
+          "oracle": "0xd2d04d0e5886fc3bb47bde1e7571fb83d187cff7",
+          "oracle_price": "766080924790000679792943749",
+          "vault_cap": "10000000000"
+        }
+      ],
       "pools": [
         {
-          "pool": "0x62fde201c424d6d07730b77450dd73928ebac5f5",
-          "fee": 100,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 500,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 3,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 1000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 5,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 2000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 9,
               "swap_proceeds": "0"
             }
-          ]
+          ],
+          "fee": 100,
+          "pool": "0x62fde201c424d6d07730b77450dd73928ebac5f5",
+          "stock_is_token0": true
         },
         {
-          "pool": "0xa7bb1ac63bbab0c44316e6c8c455213441689167",
-          "fee": 500,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "174192767483",
               "impact_bps": 500,
               "proceeds": "174192767483",
-              "complete": true,
-              "engine_proceeds": "174192767483",
-              "engine_complete": true,
               "steps": 41,
               "swap_proceeds": "174192767483"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "180438539050",
               "impact_bps": 1000,
               "proceeds": "180438539050",
-              "complete": true,
-              "engine_proceeds": "180438539050",
-              "engine_complete": true,
               "steps": 48,
               "swap_proceeds": "180438539050"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "182182397702",
               "impact_bps": 2000,
               "proceeds": "182182397702",
-              "complete": true,
-              "engine_proceeds": "182182397702",
-              "engine_complete": true,
               "steps": 54,
               "swap_proceeds": "182182397702"
             }
-          ]
+          ],
+          "fee": 500,
+          "pool": "0xa7bb1ac63bbab0c44316e6c8c455213441689167",
+          "stock_is_token0": true
         },
         {
-          "pool": "0xa43b424bc609495aed4bcd88d654934b510b0ad9",
-          "fee": 3000,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "11137835284",
               "impact_bps": 500,
               "proceeds": "11137835284",
-              "complete": true,
-              "engine_proceeds": "11137835284",
-              "engine_complete": true,
               "steps": 10,
               "swap_proceeds": "11137835284"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "11974931872",
               "impact_bps": 1000,
               "proceeds": "11974931872",
-              "complete": true,
-              "engine_proceeds": "11974931872",
-              "engine_complete": true,
               "steps": 16,
               "swap_proceeds": "11974931872"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "12397150334",
               "impact_bps": 2000,
               "proceeds": "12397150334",
-              "complete": true,
-              "engine_proceeds": "12397150334",
-              "engine_complete": true,
               "steps": 20,
               "swap_proceeds": "12397150334"
             }
-          ]
+          ],
+          "fee": 3000,
+          "pool": "0xa43b424bc609495aed4bcd88d654934b510b0ad9",
+          "stock_is_token0": true
         }
       ],
+      "price": "765547909",
+      "price_pool": "0xa7bb1ac63bbab0c44316e6c8c455213441689167",
       "sellable": [
         "185330602767",
         "192413470922",
         "194579548036"
       ],
-      "price_pool": "0xa7bb1ac63bbab0c44316e6c8c455213441689167",
-      "price": "765547909"
+      "stock": "0x117cc2133c37b721f49de2a7a74833232b3b4c0c",
+      "symbol": "SPY",
+      "vault_cap": "10000000000"
     },
     {
-      "stock": "0x322f0929c4625ed5bad873c95208d54e1c003b2d",
-      "symbol": "TSLA",
-      "listed": true,
-      "decimals": 18,
-      "markets": [
-        {
-          "id": "0x7b0a7e894164df14f0422c18c218f6104c5ca5a626c33e2f0e9f77189bbd42f2",
-          "oracle": "0xb2df94538ba8c6273a528617a9d16e48ee082dbc",
-          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
-          "lltv_wad": "625000000000000000",
-          "vault_cap": "10000000000",
-          "borrowed": "80002294",
-          "accrued": true,
-          "oracle_price": "354900316134718521621745566"
-        }
-      ],
       "borrowed": "80002294",
-      "vault_cap": "10000000000",
       "collateral": "548254883262273827",
       "collateral_value": "194575831",
+      "decimals": 18,
+      "listed": true,
+      "markets": [
+        {
+          "accrued": true,
+          "borrowed": "80002294",
+          "id": "0x7b0a7e894164df14f0422c18c218f6104c5ca5a626c33e2f0e9f77189bbd42f2",
+          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
+          "lltv_wad": "625000000000000000",
+          "oracle": "0xb2df94538ba8c6273a528617a9d16e48ee082dbc",
+          "oracle_price": "354900316134718521621745566",
+          "vault_cap": "10000000000"
+        }
+      ],
       "pools": [
         {
-          "pool": "0x7868622ff2c3b1b6c8acb15fe0bdaebf043dda48",
-          "fee": 100,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 500,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 3,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 1000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 5,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 2000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 10,
               "swap_proceeds": "0"
             }
-          ]
+          ],
+          "fee": 100,
+          "pool": "0x7868622ff2c3b1b6c8acb15fe0bdaebf043dda48",
+          "stock_is_token0": true
         },
         {
-          "pool": "0xc4f0172d6ac8dd294dd1137d047d5e1893760236",
-          "fee": 500,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "16937847729",
               "impact_bps": 500,
               "proceeds": "16937847729",
-              "complete": true,
-              "engine_proceeds": "16937847729",
-              "engine_complete": true,
               "steps": 9,
               "swap_proceeds": "16937847729"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "20085744985",
               "impact_bps": 1000,
               "proceeds": "20085744985",
-              "complete": true,
-              "engine_proceeds": "20085744985",
-              "engine_complete": true,
               "steps": 14,
               "swap_proceeds": "20085744985"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "20549514767",
               "impact_bps": 2000,
               "proceeds": "20549514767",
-              "complete": true,
-              "engine_proceeds": "20549514767",
-              "engine_complete": true,
               "steps": 22,
               "swap_proceeds": "20549514767"
             }
-          ]
+          ],
+          "fee": 500,
+          "pool": "0xc4f0172d6ac8dd294dd1137d047d5e1893760236",
+          "stock_is_token0": true
         },
         {
-          "pool": "0xf4acdaeeb7022862a763c9b1b885e11191c889e3",
-          "fee": 3000,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "111408618838",
               "impact_bps": 500,
               "proceeds": "111408618838",
-              "complete": true,
-              "engine_proceeds": "111408618838",
-              "engine_complete": true,
               "steps": 10,
               "swap_proceeds": "111408618838"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "157032259967",
               "impact_bps": 1000,
               "proceeds": "157032259967",
-              "complete": true,
-              "engine_proceeds": "157032259967",
-              "engine_complete": true,
               "steps": 19,
               "swap_proceeds": "157032259967"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "181106992644",
               "impact_bps": 2000,
               "proceeds": "181106992644",
-              "complete": true,
-              "engine_proceeds": "181106992644",
-              "engine_complete": true,
               "steps": 35,
               "swap_proceeds": "181106992644"
             }
-          ]
+          ],
+          "fee": 3000,
+          "pool": "0xf4acdaeeb7022862a763c9b1b885e11191c889e3",
+          "stock_is_token0": true
         },
         {
-          "pool": "0xb349fb08c2712f3a70bad40a4d006b68d67e888b",
-          "fee": 10000,
-          "stock_is_token0": true,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "1227687601",
               "impact_bps": 500,
               "proceeds": "1227687601",
-              "complete": true,
-              "engine_proceeds": "1227687601",
-              "engine_complete": true,
               "steps": 2,
               "swap_proceeds": "1227687601"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "2478077811",
               "impact_bps": 1000,
               "proceeds": "2478077811",
-              "complete": true,
-              "engine_proceeds": "2478077811",
-              "engine_complete": true,
               "steps": 3,
               "swap_proceeds": "2478077811"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "4601560772",
               "impact_bps": 2000,
               "proceeds": "4601560772",
-              "complete": true,
-              "engine_proceeds": "4601560772",
-              "engine_complete": true,
               "steps": 5,
               "swap_proceeds": "4601560772"
             }
-          ]
+          ],
+          "fee": 10000,
+          "pool": "0xb349fb08c2712f3a70bad40a4d006b68d67e888b",
+          "stock_is_token0": true
         }
       ],
+      "price": "354599006",
+      "price_pool": "0xf4acdaeeb7022862a763c9b1b885e11191c889e3",
       "sellable": [
         "129574154168",
         "179596082763",
         "206258068183"
       ],
-      "price_pool": "0xf4acdaeeb7022862a763c9b1b885e11191c889e3",
-      "price": "354599006"
+      "stock": "0x322f0929c4625ed5bad873c95208d54e1c003b2d",
+      "symbol": "TSLA",
+      "vault_cap": "10000000000"
     },
     {
-      "stock": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
-      "symbol": "AAPL",
-      "listed": true,
-      "decimals": 18,
-      "markets": [
-        {
-          "id": "0x8865149ec23deeaa41a76a96cfc6ae1daac0a07196a4f22000dad0f0d559cb3e",
-          "oracle": "0xa8c510c4a240bb230340150fee83d943043db858",
-          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
-          "lltv_wad": "625000000000000000",
-          "vault_cap": "10000000000",
-          "borrowed": "81979217",
-          "accrued": true,
-          "oracle_price": "330467586956447392076070250"
-        }
-      ],
       "borrowed": "81979217",
-      "vault_cap": "10000000000",
       "collateral": "693645127825387476",
       "collateral_value": "229227231",
+      "decimals": 18,
+      "listed": true,
+      "markets": [
+        {
+          "accrued": true,
+          "borrowed": "81979217",
+          "id": "0x8865149ec23deeaa41a76a96cfc6ae1daac0a07196a4f22000dad0f0d559cb3e",
+          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
+          "lltv_wad": "625000000000000000",
+          "oracle": "0xa8c510c4a240bb230340150fee83d943043db858",
+          "oracle_price": "330467586956447392076070250",
+          "vault_cap": "10000000000"
+        }
+      ],
       "pools": [
         {
-          "pool": "0xaae0d815ee56e4092a5e5c2911e676fea50b2d6d",
-          "fee": 500,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "89876264158",
               "impact_bps": 500,
               "proceeds": "89876264158",
-              "complete": true,
-              "engine_proceeds": "89876264158",
-              "engine_complete": true,
               "steps": 38,
               "swap_proceeds": "89876264158"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "113998518929",
               "impact_bps": 1000,
               "proceeds": "113998518929",
-              "complete": true,
-              "engine_proceeds": "113998518929",
-              "engine_complete": true,
               "steps": 67,
               "swap_proceeds": "113998518929"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "116927069221",
               "impact_bps": 2000,
               "proceeds": "116927069221",
-              "complete": true,
-              "engine_proceeds": "116927069221",
-              "engine_complete": true,
               "steps": 87,
               "swap_proceeds": "116927069221"
             }
-          ]
+          ],
+          "fee": 500,
+          "pool": "0xaae0d815ee56e4092a5e5c2911e676fea50b2d6d",
+          "stock_is_token0": false
         },
         {
-          "pool": "0x783c9bbb765047cfdd2b84b92b2ca9f11d34b7ed",
-          "fee": 3000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "31869374053",
               "impact_bps": 500,
               "proceeds": "31869374053",
-              "complete": true,
-              "engine_proceeds": "31869374053",
-              "engine_complete": true,
               "steps": 10,
               "swap_proceeds": "31869374053"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "47587161743",
               "impact_bps": 1000,
               "proceeds": "47587161743",
-              "complete": true,
-              "engine_proceeds": "47587161743",
-              "engine_complete": true,
               "steps": 17,
               "swap_proceeds": "47587161743"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "70736151895",
               "impact_bps": 2000,
               "proceeds": "70736151895",
-              "complete": true,
-              "engine_proceeds": "70736151895",
-              "engine_complete": true,
               "steps": 27,
               "swap_proceeds": "70736151895"
             }
-          ]
+          ],
+          "fee": 3000,
+          "pool": "0x783c9bbb765047cfdd2b84b92b2ca9f11d34b7ed",
+          "stock_is_token0": false
         },
         {
-          "pool": "0x3714aa8105de1f384481b425788af413748c1837",
-          "fee": 10000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "496701150",
               "impact_bps": 500,
               "proceeds": "496701150",
-              "complete": true,
-              "engine_proceeds": "496701150",
-              "engine_complete": true,
               "steps": 2,
               "swap_proceeds": "496701150"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "842356280",
               "impact_bps": 1000,
               "proceeds": "842356280",
-              "complete": true,
-              "engine_proceeds": "842356280",
-              "engine_complete": true,
               "steps": 4,
               "swap_proceeds": "842356280"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "1318960972",
               "impact_bps": 2000,
               "proceeds": "1318960972",
-              "complete": true,
-              "engine_proceeds": "1318960972",
-              "engine_complete": true,
               "steps": 7,
               "swap_proceeds": "1318960972"
             }
-          ]
+          ],
+          "fee": 10000,
+          "pool": "0x3714aa8105de1f384481b425788af413748c1837",
+          "stock_is_token0": false
         }
       ],
+      "price": "330442702",
+      "price_pool": "0xaae0d815ee56e4092a5e5c2911e676fea50b2d6d",
       "sellable": [
         "122242339361",
         "162428036952",
         "188982182088"
       ],
-      "price_pool": "0xaae0d815ee56e4092a5e5c2911e676fea50b2d6d",
-      "price": "330442702"
+      "stock": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
+      "symbol": "AAPL",
+      "vault_cap": "10000000000"
     },
     {
-      "stock": "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
-      "symbol": "NVDA",
-      "listed": true,
-      "decimals": 18,
-      "markets": [
-        {
-          "id": "0x467464ebfe2988ca5b2d2b4273aa688c4855d79270fdfafd64ef83088d917c48",
-          "oracle": "0x8633cbf28ec16e9af167e26f2e8775f5ff3f148a",
-          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
-          "lltv_wad": "625000000000000000",
-          "vault_cap": "10000000000",
-          "borrowed": "240043486",
-          "accrued": true,
-          "oracle_price": "231394228407909125903273124"
-        }
-      ],
       "borrowed": "240043486",
-      "vault_cap": "10000000000",
       "collateral": "2736741971611815748",
       "collateral_value": "633266296",
+      "decimals": 18,
+      "listed": true,
+      "markets": [
+        {
+          "accrued": true,
+          "borrowed": "240043486",
+          "id": "0x467464ebfe2988ca5b2d2b4273aa688c4855d79270fdfafd64ef83088d917c48",
+          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
+          "lltv_wad": "625000000000000000",
+          "oracle": "0x8633cbf28ec16e9af167e26f2e8775f5ff3f148a",
+          "oracle_price": "231394228407909125903273124",
+          "vault_cap": "10000000000"
+        }
+      ],
       "pools": [
         {
-          "pool": "0xb75d2d02b0ec3de50d32e40a4f1a8dae8acc4333",
-          "fee": 100,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "82296459",
               "impact_bps": 500,
               "proceeds": "82296459",
-              "complete": true,
-              "engine_proceeds": "82296459",
-              "engine_complete": true,
               "steps": 4,
               "swap_proceeds": "82296459"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "82296459",
               "impact_bps": 1000,
               "proceeds": "82296459",
-              "complete": true,
-              "engine_proceeds": "82296459",
-              "engine_complete": true,
               "steps": 6,
               "swap_proceeds": "82296459"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "82296459",
               "impact_bps": 2000,
               "proceeds": "82296459",
-              "complete": true,
-              "engine_proceeds": "82296459",
-              "engine_complete": true,
               "steps": 10,
               "swap_proceeds": "82296459"
             }
-          ]
+          ],
+          "fee": 100,
+          "pool": "0xb75d2d02b0ec3de50d32e40a4f1a8dae8acc4333",
+          "stock_is_token0": false
         },
         {
-          "pool": "0xd4eb21209c4d6093f80b5b84f5c45cc093ea14a3",
-          "fee": 500,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "1503451287187",
               "impact_bps": 500,
               "proceeds": "1503451287187",
-              "complete": true,
-              "engine_proceeds": "1503451287187",
-              "engine_complete": true,
               "steps": 52,
               "swap_proceeds": "1503451287187"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "2331219044452",
               "impact_bps": 1000,
               "proceeds": "2331219044452",
-              "complete": true,
-              "engine_proceeds": "2331219044452",
-              "engine_complete": true,
               "steps": 106,
               "swap_proceeds": "2331219044452"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "2577300293517",
               "impact_bps": 2000,
               "proceeds": "2577300293517",
-              "complete": true,
-              "engine_proceeds": "2577300293517",
-              "engine_complete": true,
               "steps": 208,
               "swap_proceeds": "2577300293517"
             }
-          ]
+          ],
+          "fee": 500,
+          "pool": "0xd4eb21209c4d6093f80b5b84f5c45cc093ea14a3",
+          "stock_is_token0": false
         },
         {
-          "pool": "0xb944cec30bd4175855215d767adc81f39e5f7e2b",
-          "fee": 3000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "11848581620",
               "impact_bps": 500,
               "proceeds": "11848581620",
-              "complete": true,
-              "engine_proceeds": "11848581620",
-              "engine_complete": true,
               "steps": 8,
               "swap_proceeds": "11848581620"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "16478574491",
               "impact_bps": 1000,
               "proceeds": "16478574491",
-              "complete": true,
-              "engine_proceeds": "16478574491",
-              "engine_complete": true,
               "steps": 16,
               "swap_proceeds": "16478574491"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "17798779192",
               "impact_bps": 2000,
               "proceeds": "17798779192",
-              "complete": true,
-              "engine_proceeds": "17798779192",
-              "engine_complete": true,
               "steps": 26,
               "swap_proceeds": "17798779192"
             }
-          ]
+          ],
+          "fee": 3000,
+          "pool": "0xb944cec30bd4175855215d767adc81f39e5f7e2b",
+          "stock_is_token0": false
         },
         {
-          "pool": "0xc277560df3689a401ba7dedd7626168b234ceb5e",
-          "fee": 10000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "6913839",
               "impact_bps": 500,
               "proceeds": "6913839",
-              "complete": true,
-              "engine_proceeds": "6913839",
-              "engine_complete": true,
               "steps": 1,
               "swap_proceeds": "6913839"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "11526314",
               "impact_bps": 1000,
               "proceeds": "11526314",
-              "complete": true,
-              "engine_proceeds": "11526314",
-              "engine_complete": true,
               "steps": 2,
               "swap_proceeds": "11526314"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "11526314",
               "impact_bps": 2000,
               "proceeds": "11526314",
-              "complete": true,
-              "engine_proceeds": "11526314",
-              "engine_complete": true,
               "steps": 2,
               "swap_proceeds": "11526314"
             }
-          ]
+          ],
+          "fee": 10000,
+          "pool": "0xc277560df3689a401ba7dedd7626168b234ceb5e",
+          "stock_is_token0": false
         }
       ],
+      "price": "231555322",
+      "price_pool": "0xd4eb21209c4d6093f80b5b84f5c45cc093ea14a3",
       "sellable": [
         "1515389079105",
         "2347791441716",
         "2595192895482"
       ],
-      "price_pool": "0xd4eb21209c4d6093f80b5b84f5c45cc093ea14a3",
-      "price": "231555322"
+      "stock": "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
+      "symbol": "NVDA",
+      "vault_cap": "10000000000"
     },
     {
-      "stock": "0xd5f3879160bc7c32ebb4dc785f8a4f505888de68",
-      "symbol": "QQQ",
-      "listed": true,
-      "decimals": 18,
-      "markets": [
-        {
-          "id": "0xdab32d3a57485b0de3856eea808332456c4d053df20777ece55ccba21c091561",
-          "oracle": "0x7b57d0e0be56289f5c3427b0b161d44181b108ff",
-          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
-          "lltv_wad": "770000000000000000",
-          "vault_cap": "10000000000",
-          "borrowed": "20058423",
-          "accrued": true,
-          "oracle_price": "744363557066277652037971845"
-        }
-      ],
       "borrowed": "20058423",
-      "vault_cap": "10000000000",
       "collateral": "50105986304192405",
       "collateral_value": "37297070",
+      "decimals": 18,
+      "listed": true,
+      "markets": [
+        {
+          "accrued": true,
+          "borrowed": "20058423",
+          "id": "0xdab32d3a57485b0de3856eea808332456c4d053df20777ece55ccba21c091561",
+          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
+          "lltv_wad": "770000000000000000",
+          "oracle": "0x7b57d0e0be56289f5c3427b0b161d44181b108ff",
+          "oracle_price": "744363557066277652037971845",
+          "vault_cap": "10000000000"
+        }
+      ],
       "pools": [
         {
-          "pool": "0x4539019b527211998642fec342c85dcb44c7e5e4",
-          "fee": 100,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 500,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 3,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 1000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 5,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 2000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 9,
               "swap_proceeds": "0"
             }
-          ]
+          ],
+          "fee": 100,
+          "pool": "0x4539019b527211998642fec342c85dcb44c7e5e4",
+          "stock_is_token0": false
         },
         {
-          "pool": "0xd60a5d14db690b7afad71f76b108071d7175597d",
-          "fee": 500,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "367183273346",
               "impact_bps": 500,
               "proceeds": "367183273346",
-              "complete": true,
-              "engine_proceeds": "367183273346",
-              "engine_complete": true,
               "steps": 30,
               "swap_proceeds": "367183273346"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "515238060969",
               "impact_bps": 1000,
               "proceeds": "515238060969",
-              "complete": true,
-              "engine_proceeds": "515238060969",
-              "engine_complete": true,
               "steps": 57,
               "swap_proceeds": "515238060969"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "561186495198",
               "impact_bps": 2000,
               "proceeds": "561186495198",
-              "complete": true,
-              "engine_proceeds": "561186495198",
-              "engine_complete": true,
               "steps": 74,
               "swap_proceeds": "561186495198"
             }
-          ]
+          ],
+          "fee": 500,
+          "pool": "0xd60a5d14db690b7afad71f76b108071d7175597d",
+          "stock_is_token0": false
         },
         {
-          "pool": "0xebd78dcfc8a6b3a696f1e191ad1ff321f9579f79",
-          "fee": 3000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "6737413706",
               "impact_bps": 500,
               "proceeds": "6737413706",
-              "complete": true,
-              "engine_proceeds": "6737413706",
-              "engine_complete": true,
               "steps": 9,
               "swap_proceeds": "6737413706"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "8240581741",
               "impact_bps": 1000,
               "proceeds": "8240581741",
-              "complete": true,
-              "engine_proceeds": "8240581741",
-              "engine_complete": true,
               "steps": 14,
               "swap_proceeds": "8240581741"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "9784596290",
               "impact_bps": 2000,
               "proceeds": "9784596290",
-              "complete": true,
-              "engine_proceeds": "9784596290",
-              "engine_complete": true,
               "steps": 23,
               "swap_proceeds": "9784596290"
             }
-          ]
+          ],
+          "fee": 3000,
+          "pool": "0xebd78dcfc8a6b3a696f1e191ad1ff321f9579f79",
+          "stock_is_token0": false
         }
       ],
+      "price": "743442679",
+      "price_pool": "0xd60a5d14db690b7afad71f76b108071d7175597d",
       "sellable": [
         "373920687052",
         "523478642710",
         "570971091488"
       ],
-      "price_pool": "0xd60a5d14db690b7afad71f76b108071d7175597d",
-      "price": "743442679"
+      "stock": "0xd5f3879160bc7c32ebb4dc785f8a4f505888de68",
+      "symbol": "QQQ",
+      "vault_cap": "10000000000"
     },
     {
-      "stock": "0xe93237c50d904957cf27e7b1133b510c669c2e74",
-      "symbol": "MSFT",
-      "listed": true,
-      "decimals": 18,
-      "markets": [
-        {
-          "id": "0x2a05a82771c3843a9ac24b36147c469431df7fa35ac586bf2b0d4b91680d3467",
-          "oracle": "0x8aeed6bf3f332cb8b0ac6d3afbe610c1012d8e91",
-          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
-          "lltv_wad": "625000000000000000",
-          "vault_cap": "10000000000",
-          "borrowed": "135004924",
-          "accrued": true,
-          "oracle_price": "514780150822034467282229610"
-        }
-      ],
       "borrowed": "135004924",
-      "vault_cap": "10000000000",
       "collateral": "519593383304775578",
       "collateral_value": "267476360",
+      "decimals": 18,
+      "listed": true,
+      "markets": [
+        {
+          "accrued": true,
+          "borrowed": "135004924",
+          "id": "0x2a05a82771c3843a9ac24b36147c469431df7fa35ac586bf2b0d4b91680d3467",
+          "irm": "0x9316e7edab60ef0f489b1e4d11ddcdaa560acbfd",
+          "lltv_wad": "625000000000000000",
+          "oracle": "0x8aeed6bf3f332cb8b0ac6d3afbe610c1012d8e91",
+          "oracle_price": "514780150822034467282229610",
+          "vault_cap": "10000000000"
+        }
+      ],
       "pools": [
         {
-          "pool": "0x3d69ea64810300877b938e9ad9916c25912c08f5",
-          "fee": 100,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 500,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 3,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 1000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 5,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 2000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 9,
               "swap_proceeds": "0"
             }
-          ]
+          ],
+          "fee": 100,
+          "pool": "0x3d69ea64810300877b938e9ad9916c25912c08f5",
+          "stock_is_token0": false
         },
         {
-          "pool": "0x38fa8bf13a6b2ac49be77babb22c1837d1e505f9",
-          "fee": 500,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 500,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 0,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 1000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 0,
               "swap_proceeds": "0"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "0",
               "impact_bps": 2000,
               "proceeds": "0",
-              "complete": true,
-              "engine_proceeds": "0",
-              "engine_complete": true,
               "steps": 0,
               "swap_proceeds": "0"
             }
-          ]
+          ],
+          "fee": 500,
+          "pool": "0x38fa8bf13a6b2ac49be77babb22c1837d1e505f9",
+          "stock_is_token0": false
         },
         {
-          "pool": "0xeb60bcd1d920ad6e102690ccfc6fb488899e1510",
-          "fee": 3000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "340166117851",
               "impact_bps": 500,
               "proceeds": "340166117851",
-              "complete": true,
-              "engine_proceeds": "340166117851",
-              "engine_complete": true,
               "steps": 10,
               "swap_proceeds": "340166117851"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "419285771789",
               "impact_bps": 1000,
               "proceeds": "419285771789",
-              "complete": true,
-              "engine_proceeds": "419285771789",
-              "engine_complete": true,
               "steps": 19,
               "swap_proceeds": "419285771789"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "448318835676",
               "impact_bps": 2000,
               "proceeds": "448318835676",
-              "complete": true,
-              "engine_proceeds": "448318835676",
-              "engine_complete": true,
               "steps": 39,
               "swap_proceeds": "448318835676"
             }
-          ]
+          ],
+          "fee": 3000,
+          "pool": "0xeb60bcd1d920ad6e102690ccfc6fb488899e1510",
+          "stock_is_token0": false
         },
         {
-          "pool": "0x2ea9292113514ed84fd16aa4ad1e416537e39c8c",
-          "fee": 10000,
-          "stock_is_token0": false,
           "depth": [
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "50125732",
               "impact_bps": 500,
               "proceeds": "50125732",
-              "complete": true,
-              "engine_proceeds": "50125732",
-              "engine_complete": true,
               "steps": 1,
               "swap_proceeds": "50125732"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "53267350",
               "impact_bps": 1000,
               "proceeds": "53267350",
-              "complete": true,
-              "engine_proceeds": "53267350",
-              "engine_complete": true,
               "steps": 2,
               "swap_proceeds": "53267350"
             },
             {
+              "complete": true,
+              "engine_complete": true,
+              "engine_proceeds": "53406633",
               "impact_bps": 2000,
               "proceeds": "53406633",
-              "complete": true,
-              "engine_proceeds": "53406633",
-              "engine_complete": true,
               "steps": 2,
               "swap_proceeds": "53406633"
             }
-          ]
+          ],
+          "fee": 10000,
+          "pool": "0x2ea9292113514ed84fd16aa4ad1e416537e39c8c",
+          "stock_is_token0": false
         }
       ],
+      "price": "514509178",
+      "price_pool": "0xeb60bcd1d920ad6e102690ccfc6fb488899e1510",
       "sellable": [
         "340216243583",
         "419339039139",
         "448372242309"
       ],
-      "price_pool": "0xeb60bcd1d920ad6e102690ccfc6fb488899e1510",
-      "price": "514509178"
+      "stock": "0xe93237c50d904957cf27e7b1133b510c669c2e74",
+      "symbol": "MSFT",
+      "vault_cap": "10000000000"
     }
   ],
-  "lenders": null,
-  "notes": [
-    "Uniswap V4 pools are not counted, so sellable depth is a lower bound.",
-    "Sellable totals assume each pool is sold into up to the bound at the same time."
-  ]
+  "timestamp": 1790895405,
+  "usdg": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "vault": "0xf0e6ad006080c48766ddb95b8c568d72bc059050",
+  "verified": true
 }

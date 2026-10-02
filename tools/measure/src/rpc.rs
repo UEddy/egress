@@ -371,6 +371,10 @@ sol! {
         function tokens() external view returns (address fixedToken, address xToken, address gearingToken, address collateral, address debt);
     }
 
+    interface IDepthEngine {
+        function sellProceeds(address pool, bool stockIsToken0, uint256 maxImpactBps) external view returns (uint256);
+    }
+
     interface IOracle {
         function price() external view returns (uint256);
     }

@@ -25,6 +25,7 @@ mod lenders;
 mod markets;
 mod rpc;
 mod snapshot;
+mod verify;
 
 use std::collections::BTreeMap;
 use std::process::exit;
@@ -202,6 +203,7 @@ fn main() {
     let res = match std::env::args().nth(1).as_deref() {
         Some("markets") => run_markets(),
         Some("snapshot") => run_snapshot(),
+        Some("verify-engine") => run_verify_engine(),
         _ => parse_args().and_then(run),
     };
     if let Err(e) = res {
@@ -332,6 +334,35 @@ fn run_snapshot() -> Result<(), String> {
     eprintln!("  logs  rpc {}", redact(rpc.logs_endpoint()));
     let (usdg, usdg_decimals) = discover_usdg(&rpc)?;
     snapshot::run(&mut rpc, chain_id, number, timestamp, usdg, usdg_decimals, &lenders_path, &impacts, &out)
+}
+
+/// `verify-engine`: re-asks the deployed engine every reading in a results file.
+fn run_verify_engine() -> Result<(), String> {
+    let mut rpc_url =
+        std::env::var("ROBINHOOD_RPC_URL").ok().filter(|s| s.starts_with("http")).unwrap_or(PUBLIC_RPC.into());
+    let mut engine: Address = "0x276F4933f06B77912384D64291E062885C33E031".parse().unwrap();
+    let mut path: Option<String> = None;
+    let mut it = std::env::args().skip(2);
+    while let Some(a) = it.next() {
+        let mut val = || it.next().ok_or(format!("{a} needs a value"));
+        match a.as_str() {
+            "--rpc" => rpc_url = val()?,
+            "--engine" => engine = val()?.parse().map_err(|_| "--engine: not an address".to_string())?,
+            "-h" | "--help" => {
+                println!("egress-measure verify-engine <results.json> [--rpc URL] [--engine ADDR]");
+                exit(0);
+            }
+            p if path.is_none() && !p.starts_with("--") => path = Some(p.to_string()),
+            other => return Err(format!("unknown argument {other}")),
+        }
+    }
+    let path = path.ok_or("usage: egress-measure verify-engine <results.json>")?;
+
+    let mut rpc = Rpc::new(&rpc_url);
+    let chain_id = rpc.chain_id()?;
+    ensure(chain_id == CHAIN_ID, || format!("chain id {chain_id}, expected {CHAIN_ID}"))?;
+    eprintln!("engine {engine}, rpc {}", redact(&rpc_url));
+    verify::run(&mut rpc, engine, &path)
 }
 
 fn run_markets() -> Result<(), String> {
