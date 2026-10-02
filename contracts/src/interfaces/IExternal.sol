@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-/// @notice The subset of Morpho Vault V2 that Exitline touches.
+/// @notice The subset of Morpho Vault V2 that Egress touches.
 /// @dev Signatures match morpho-org/vault-v2 at commit 9ee4dbdc. Verify against the
 /// deployed vault with `cast` before configuring a guard on mainnet.
 interface IVaultV2Minimal {

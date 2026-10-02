@@ -9,12 +9,12 @@ import {ErrorsLib} from "vault-v2/libraries/ErrorsLib.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {ExitlineGuard} from "../src/ExitlineGuard.sol";
+import {EgressGuard} from "../src/EgressGuard.sol";
 import {GuardFactory} from "../src/GuardFactory.sol";
 import {IVaultV2Minimal} from "../src/interfaces/IExternal.sol";
 import {MockERC20, MockStockToken, MockPool, MockFeed, MockEngine, StepEngine} from "./mocks/Mocks.sol";
 
-contract ExitlineGuardTest is Test {
+contract EgressGuardTest is Test {
     address owner = makeAddr("vaultOwner");
     address curator = makeAddr("curator");
     address guardOwner = makeAddr("guardOwner");
@@ -33,7 +33,7 @@ contract ExitlineGuardTest is Test {
     MockEngine engine;
     IVaultV2 vault;
     GuardFactory factory;
-    ExitlineGuard guard;
+    EgressGuard guard;
 
     function setUp() public {
         vm.warp(1_800_000_000);
@@ -66,7 +66,7 @@ contract ExitlineGuardTest is Test {
 
     /* HELPERS */
 
-    function _config() internal view returns (ExitlineGuard.Config memory c) {
+    function _config() internal view returns (EgressGuard.Config memory c) {
         c.coverageBps = 5_000; // lend against half of sellable depth
         c.maxImpactBps = 500; // depth measured to a 5% price fall
         c.closedHaircutBps = 5_000; // halve it again while the market is closed
@@ -111,14 +111,14 @@ contract ExitlineGuardTest is Test {
     }
 
     function test_constructorRejectsBadGap() public {
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 59, ENGINE_GAS);
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 1 days + 1, ENGINE_GAS);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
+        new EgressGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 59, ENGINE_GAS);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
+        new EgressGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, 1 days + 1, ENGINE_GAS);
     }
 
     function test_configureDerivesTokenOrder() public view {
-        ExitlineGuard.PoolRef[] memory refs = guard.pools(address(nvda));
+        EgressGuard.PoolRef[] memory refs = guard.pools(address(nvda));
         assertEq(refs.length, 2);
         assertEq(refs[0].stockIsToken0, poolA.token0() == address(nvda));
     }
@@ -128,7 +128,7 @@ contract ExitlineGuardTest is Test {
         address[] memory p = new address[](1);
         p[0] = address(new MockPool(address(nvda), address(weth)));
         vm.prank(guardOwner);
-        vm.expectRevert(ExitlineGuard.PoolMismatch.selector);
+        vm.expectRevert(EgressGuard.PoolMismatch.selector);
         guard.configure(address(nvda), _config(), p);
     }
 
@@ -137,33 +137,33 @@ contract ExitlineGuardTest is Test {
         p[0] = address(poolA);
         p[1] = address(poolA);
         vm.prank(guardOwner);
-        vm.expectRevert(ExitlineGuard.DuplicatePool.selector);
+        vm.expectRevert(EgressGuard.DuplicatePool.selector);
         guard.configure(address(nvda), _config(), p);
     }
 
     function test_configureRejectsBadParameters() public {
-        ExitlineGuard.Config memory c = _config();
+        EgressGuard.Config memory c = _config();
         c.coverageBps = 0;
         vm.prank(guardOwner);
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
         guard.configure(address(nvda), c, _pools());
 
         c = _config();
         c.maxImpactBps = 2_001;
         vm.prank(guardOwner);
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
         guard.configure(address(nvda), c, _pools());
 
         c = _config();
         c.closedHaircutBps = 10_001;
         vm.prank(guardOwner);
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
         guard.configure(address(nvda), c, _pools());
 
         c = _config();
         c.maxOracleAge = 26 hours - 1;
         vm.prank(guardOwner);
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
         guard.configure(address(nvda), c, _pools());
     }
 
@@ -186,7 +186,7 @@ contract ExitlineGuardTest is Test {
 
     function test_onlyKeeperRecords() public {
         vm.prank(stranger);
-        vm.expectRevert(ExitlineGuard.NotKeeper.selector);
+        vm.expectRevert(EgressGuard.NotKeeper.selector);
         guard.record(address(nvda));
     }
 
@@ -195,7 +195,7 @@ contract ExitlineGuardTest is Test {
         guard.record(address(nvda));
         vm.warp(block.timestamp + GAP - 1);
         vm.prank(keeper);
-        vm.expectRevert(ExitlineGuard.TooSoon.selector);
+        vm.expectRevert(EgressGuard.TooSoon.selector);
         guard.record(address(nvda));
     }
 
@@ -311,7 +311,7 @@ contract ExitlineGuardTest is Test {
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bool sawFailure;
         for (uint256 i; i < logs.length; ++i) {
-            if (logs[i].emitter == address(guard) && logs[i].topics[0] == ExitlineGuard.CapCutFailed.selector) {
+            if (logs[i].emitter == address(guard) && logs[i].topics[0] == EgressGuard.CapCutFailed.selector) {
                 sawFailure = true;
             }
         }
@@ -324,7 +324,7 @@ contract ExitlineGuardTest is Test {
         vm.prank(guardOwner);
         guard.disable(address(nvda));
         vm.prank(keeper);
-        vm.expectRevert(ExitlineGuard.NotEnabled.selector);
+        vm.expectRevert(EgressGuard.NotEnabled.selector);
         guard.record(address(nvda));
     }
 
@@ -332,7 +332,7 @@ contract ExitlineGuardTest is Test {
 
     function test_emergencyCutRevertsWithoutCorporateAction() public {
         vm.prank(stranger);
-        vm.expectRevert(ExitlineGuard.NoCorporateAction.selector);
+        vm.expectRevert(EgressGuard.NoCorporateAction.selector);
         guard.emergencyCut(address(nvda));
     }
 
@@ -345,7 +345,7 @@ contract ExitlineGuardTest is Test {
 
     function test_emergencyCutIgnoresDistantCorporateAction() public {
         nvda.scheduleMultiplier(2e18, block.timestamp + 30 days);
-        vm.expectRevert(ExitlineGuard.NoCorporateAction.selector);
+        vm.expectRevert(EgressGuard.NoCorporateAction.selector);
         guard.emergencyCut(address(nvda));
     }
 
@@ -364,7 +364,7 @@ contract ExitlineGuardTest is Test {
         p[0] = address(new MockPool(address(plain), address(usdg)));
         vm.prank(guardOwner);
         guard.configure(address(plain), _config(), p);
-        vm.expectRevert(ExitlineGuard.NoCorporateAction.selector);
+        vm.expectRevert(EgressGuard.NoCorporateAction.selector);
         guard.emergencyCut(address(plain));
     }
 
@@ -408,7 +408,7 @@ contract ExitlineGuardTest is Test {
     /* ENGINE GAS BUDGET */
 
     /// @dev A guard on the same vault whose engine is a StepEngine, configured like `guard`.
-    function _stepGuard(uint256 engineGas) internal returns (ExitlineGuard g, StepEngine e) {
+    function _stepGuard(uint256 engineGas) internal returns (EgressGuard g, StepEngine e) {
         e = new StepEngine();
         g = new GuardFactory(e).createGuard(IVaultV2Minimal(address(vault)), guardOwner, GAP, engineGas);
         vm.prank(owner);
@@ -422,14 +422,14 @@ contract ExitlineGuardTest is Test {
     /// @dev Smallest gas a keeper can send to `record` (or anyone to `preview`) that passes the
     /// entry check: probe with gasRequired, then add the shortfall the revert reports. Gas used
     /// before the check is deterministic, so this is the exact threshold.
-    function _minimumGas(ExitlineGuard g, bool isRecord) internal returns (uint256) {
+    function _minimumGas(EgressGuard g, bool isRecord) internal returns (uint256) {
         uint256 need = g.gasRequired(address(nvda));
         bytes memory data = isRecord
-            ? abi.encodeCall(ExitlineGuard.record, (address(nvda)))
-            : abi.encodeCall(ExitlineGuard.preview, (address(nvda)));
+            ? abi.encodeCall(EgressGuard.record, (address(nvda)))
+            : abi.encodeCall(EgressGuard.preview, (address(nvda)));
         if (isRecord) vm.prank(keeper);
         (bool ok, bytes memory ret) = address(g).call{gas: need}(data);
-        require(!ok && bytes4(ret) == ExitlineGuard.InsufficientGas.selector, "probe did not hit the gas check");
+        require(!ok && bytes4(ret) == EgressGuard.InsufficientGas.selector, "probe did not hit the gas check");
         (uint256 required, uint256 available) = abi.decode(_tail(ret), (uint256, uint256));
         return need + (required - available);
     }
@@ -444,12 +444,12 @@ contract ExitlineGuardTest is Test {
     function test_constructorBoundsEngineGas() public {
         uint256 lo = guard.MIN_ENGINE_GAS();
         uint256 hi = guard.MAX_ENGINE_GAS();
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, lo - 1);
-        vm.expectRevert(ExitlineGuard.BadParameter.selector);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, hi + 1);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, lo);
-        new ExitlineGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, hi);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
+        new EgressGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, lo - 1);
+        vm.expectRevert(EgressGuard.BadParameter.selector);
+        new EgressGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, hi + 1);
+        new EgressGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, lo);
+        new EgressGuard(guardOwner, IVaultV2Minimal(address(vault)), engine, GAP, hi);
     }
 
     function test_factoryPassesEngineGasLimit() public view {
@@ -493,7 +493,7 @@ contract ExitlineGuardTest is Test {
     /// @dev A walk that runs the engine's full 256 steps, at the per-step cost measured on mainnet,
     /// must fit inside the recommended budget and count as real depth rather than a failed pool.
     function test_calibratedFullStepWalkFitsRecommendedBudget() public {
-        (ExitlineGuard g, StepEngine e) = _stepGuard(RECOMMENDED_ENGINE_GAS);
+        (EgressGuard g, StepEngine e) = _stepGuard(RECOMMENDED_ENGINE_GAS);
         e.set(e.MAX_STEPS(), e.MAINNET_GAS_PER_STEP(), 1_000_000e6);
         (uint256 target,, uint256 failed) = g.preview(address(nvda));
         assertEq(failed, 0, "a full 256-step walk did not fit the recommended budget");
@@ -510,7 +510,7 @@ contract ExitlineGuardTest is Test {
         engine.set(address(poolB), 1_000_000e6);
         uint256 min = _minimumGas(guard, true);
         vm.prank(keeper);
-        vm.expectPartialRevert(ExitlineGuard.InsufficientGas.selector);
+        vm.expectPartialRevert(EgressGuard.InsufficientGas.selector);
         guard.record{gas: min - 1}(address(nvda));
         assertEq(guard.readingCount(address(nvda)), 0);
         assertEq(guard.readings(address(nvda)).length, 0);
@@ -518,13 +518,13 @@ contract ExitlineGuardTest is Test {
 
     function test_previewWithTooLittleGasReverts() public {
         uint256 min = _minimumGas(guard, false);
-        vm.expectPartialRevert(ExitlineGuard.InsufficientGas.selector);
+        vm.expectPartialRevert(EgressGuard.InsufficientGas.selector);
         guard.preview{gas: min - 1}(address(nvda));
         guard.preview{gas: min}(address(nvda));
     }
 
     function test_engineOverBudgetCountsAsZeroDepth() public {
-        (ExitlineGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
+        (EgressGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
         // 20 steps of 100k gas: twice the 1M budget.
         e.set(20, 100_000, 1_000_000e6);
         (uint256 target,, uint256 failed) = g.preview(address(nvda));
@@ -533,7 +533,7 @@ contract ExitlineGuardTest is Test {
     }
 
     function test_engineWithinBudgetCounts() public {
-        (ExitlineGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
+        (EgressGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
         // 8 steps of 100k gas: 800k, inside the 1M budget.
         e.set(8, 100_000, 1_000_000e6);
         (uint256 target,, uint256 failed) = g.preview(address(nvda));
@@ -545,7 +545,7 @@ contract ExitlineGuardTest is Test {
     /// reading must still be stored and the cap cut through the real Vault V2 code. If the fixed
     /// overhead were too small, this would run out of gas or record a CapCutFailed.
     function test_minimumGasWithFullBudgetBurnStillRecordsAndCuts() public {
-        (ExitlineGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
+        (EgressGuard g, StepEngine e) = _stepGuard(ENGINE_GAS);
         // More work than the budget: each engine call burns all of it and fails.
         e.set(1_000, 100_000, 0);
         for (uint256 i; i < g.WINDOW(); ++i) {
@@ -556,7 +556,7 @@ contract ExitlineGuardTest is Test {
             g.record{gas: need}(address(nvda));
             Vm.Log[] memory logs = vm.getRecordedLogs();
             for (uint256 j; j < logs.length; ++j) {
-                assertTrue(logs[j].topics[0] != ExitlineGuard.CapCutFailed.selector, "cap cut starved");
+                assertTrue(logs[j].topics[0] != EgressGuard.CapCutFailed.selector, "cap cut starved");
             }
             vm.warp(block.timestamp + GAP);
         }

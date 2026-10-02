@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fork simulation: ExitlineGuard on the real NetNet Credit Vault V2, cutting its AAPL cap.
+# Fork simulation: EgressGuard on the real NetNet Credit Vault V2, cutting its AAPL cap.
 # Measures AAPL depth with tools/measure at the latest block, then runs the fork test at that same
 # block with a mock engine returning those numbers. Nothing is broadcast.
 #
@@ -9,7 +9,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 rpc="${ROBINHOOD_RPC_URL:-https://rpc.mainnet.chain.robinhood.com}"
-report="$(mktemp -t exitline-aapl-XXXXXX.json)"
+report="$(mktemp -t egress-aapl-XXXXXX.json)"
 trap 'rm -f "$report"' EXIT
 
 block_args=()

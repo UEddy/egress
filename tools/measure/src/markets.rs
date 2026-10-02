@@ -1,4 +1,4 @@
-//! `exitline-measure markets <TOKEN>`: every market on canonical Morpho Blue that takes TOKEN as
+//! `egress-measure markets <TOKEN>`: every market on canonical Morpho Blue that takes TOKEN as
 //! collateral, with its suppliers, borrowers and the vaults (V1 or V2) that lend into it.
 //!
 //! Markets come from Blue's CreateMarket logs; suppliers, borrowers and collateral depositors from

@@ -1,6 +1,6 @@
-# Exitline
+# Egress
 
-Exitline protects people who lend money against tokenized stocks. It measures, onchain, how much of
+Egress protects people who lend money against tokenized stocks. It measures, onchain, how much of
 a stock could actually be sold in a crash, and it automatically stops new lending on that stock
 before the loans outgrow the market that has to absorb them.
 
@@ -37,11 +37,11 @@ vault, NetNet Credit. One vault, one market, one position, against depth that ca
 
 Depth also moves. At block 77749579 the same measurement put AAPL sellable within 5 percent at
 122,242 USDG and NVDA at 1,515,389 USDG. A number measured once is not a safety property, which is
-why Exitline measures continuously.
+why Egress measures continuously.
 
-## What Exitline does
+## What Egress does
 
-Exitline installs as a **sentinel** on a Morpho Vault V2 vault. Vault V2 lets a sentinel lower
+Egress installs as a **sentinel** on a Morpho Vault V2 vault. Vault V2 lets a sentinel lower
 supply caps immediately, while any raise has to go through the curator's timelock. That asymmetry is
 the whole design: the guard can take risk off the table instantly and can never add any.
 
@@ -60,7 +60,7 @@ way a real swap would, and returns the quote token amount a seller receives befo
 by `maxImpactBps`. It is view only, holds no storage and never swaps. Every rounding choice makes
 reported depth smaller, never larger.
 
-**`contracts/ExitlineGuard.sol`** is the sentinel. It reads depth from the engine for each
+**`contracts/EgressGuard.sol`** is the sentinel. It reads depth from the engine for each
 configured pool, applies a coverage factor and a closed market haircut, keeps a rolling window of
 readings, and cuts the cap to the median of five.
 
@@ -116,6 +116,12 @@ allocation is about 197,000 USDG. The cut stops new lending and leaves current p
 Activated at Stylus version 3.
 
 ### Verifying the deployed bytes
+
+The Rust crate in `engine/` is still named `exitline-engine`, from the project's earlier name, and
+it stays that way deliberately. The deployed contract is verified by comparing hashes against a
+rebuild of that crate, and the crate name is baked into the artifact path and into the build itself.
+Renaming it would change the bytes and break the check below, so the engine keeps its original name
+while the rest of the project is Egress.
 
 Verification is **by byte comparison**, not by `cargo stylus verify`. The engine was built
 reproducibly in cargo-stylus's own Docker image and then deployed with `--wasm-file`, which ships the
@@ -284,7 +290,7 @@ Stated plainly, because a risk tool that oversells itself is worse than none.
 - **The engine's walk is bounded at 256 steps.** In a pool dense enough to need more, the engine
   reports less depth than exists. That direction is deliberate.
 - **Vault V2 only.** MetaMorpho V1 has no sentinel role, so vaults like Denar's equity vault cannot
-  use Exitline without granting a curator role, which this design deliberately avoids.
+  use Egress without granting a curator role, which this design deliberately avoids.
 - **Depth is a snapshot of one side of the book.** Sellable totals assume every pool is sold into up
   to the bound at the same time, and no other seller is competing.
 

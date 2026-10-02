@@ -765,6 +765,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "egress-measure"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "exitline-engine",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "either"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -812,18 +824,6 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "stylus-sdk",
-]
-
-[[package]]
-name = "exitline-measure"
-version = "0.1.0"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "exitline-engine",
- "serde",
- "serde_json",
- "ureq",
 ]
 
 [[package]]

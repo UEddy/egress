@@ -1,4 +1,4 @@
-//! `exitline-measure snapshot`: writes the dashboard's data file.
+//! `egress-measure snapshot`: writes the dashboard's data file.
 //!
 //! One pinned block, three things the page needs: sellable depth per stock, the chain wide
 //! inventory of stock collateral held by lending contracts, and every canonical Morpho Blue market

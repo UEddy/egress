@@ -1,4 +1,4 @@
-# Exitline
+# Egress
 
 Entry for the Arbitrum Open House Singapore Online Buildathon (HackQuest).
 Submission closes Oct 4, 2026, 15:59 as shown on HackQuest (assumed UTC, so 16:59 Lagos). Confirm on the logged-in page.
@@ -6,7 +6,7 @@ Registration closes Oct 2, 2026.
 
 ## What it is
 
-Exitline protects people who lend money against tokenized stocks. It checks onchain how much of a
+Egress protects people who lend money against tokenized stocks. It checks onchain how much of a
 stock could actually be sold in a crash. If loans grow bigger than the market can absorb, it
 automatically stops new lending on that stock before lenders are left with losses.
 
@@ -18,8 +18,11 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
 - `engine/` Rust Arbitrum Stylus contract. `sellProceeds(pool, stockIsToken0, maxImpactBps)` walks a
   Uniswap V3 pool's initialized ticks like a swap would and returns the quote-token amount a
   seller receives before the price falls by `maxImpactBps`. View only, no storage, never swaps.
+  The crate is still named `exitline-engine`, from the project's earlier name, and stays that way:
+  the deployed bytes are verified against a rebuild of it, so renaming the crate would change them.
+  Nothing under `engine/` was touched by the rename to Egress.
 - `contracts/` Solidity 0.8.28 (Foundry).
-  - `ExitlineGuard.sol`: installed as a Morpho **Vault V2 sentinel**. Vault V2 lets a sentinel lower
+  - `EgressGuard.sol`: installed as a Morpho **Vault V2 sentinel**. Vault V2 lets a sentinel lower
     caps instantly but never raise them (raises go through the curator's timelock). The guard cuts
     the per-stock cap id `keccak256(abi.encode("collateralToken", stock))`, which covers every
     market for that stock in the vault (MorphoMarketV1AdapterV2.ids()).
@@ -245,7 +248,7 @@ Stretch: sentinel `deallocate`; Uniswap V4 pools via StateView.
 
 | Contract | Address | Source |
 |---|---|---|
-| **Exitline depth engine (Stylus)** | **0x276F4933f06B77912384D64291E062885C33E031** | deployed Oct 2, 2026 |
+| **Egress depth engine (Stylus)** | **0x276F4933f06B77912384D64291E062885C33E031** | deployed Oct 2, 2026 |
 | Morpho Blue (canonical) | 0x9D53d5E3bd5E8d4Cbfa6DB1ca238AEA02E651010 | morpho-org/sdks |
 | Vault V2 factory | 0x0FBad98595b0186dA120E41f77C102beb49f803c | morpho-org/sdks |
 | MorphoMarketV1AdapterV2 factory | 0x79370Ed003CE325C088E530d5e8655c99c2993e1 | morpho-org/sdks |
@@ -331,7 +334,7 @@ browser-like User-Agent (python-urllib's default is refused; cast and reqwest ar
 A `--verify` run with lenders takes ~4.5 min; with --no-lenders about 55 s.
 Since Sep 29 eth_getLogs ranges are capped at 10M blocks; tools/measure splits them.
 
-Denar's equity vault is MetaMorpho V1, which has no sentinel role. Exitline supports Vault V2 only.
+Denar's equity vault is MetaMorpho V1, which has no sentinel role. Egress supports Vault V2 only.
 Do not design around holding a curator role.
 
 ## Commands (WSL Ubuntu)

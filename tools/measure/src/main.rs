@@ -1,17 +1,17 @@
-//! exitline-measure: for each stock market behind Denar's equity vault, compares USDG borrowed
+//! egress-measure: for each stock market behind Denar's equity vault, compares USDG borrowed
 //! against the USDG a seller of the stock could get out of Uniswap V3 before the price falls by
 //! 5%, 10% and 20%. Depth comes from the same tick walk the Stylus engine runs onchain.
 //!
-//! Also: exitline-measure markets <TOKEN> [--rpc URL] [--block N] [--json PATH]
+//! Also: egress-measure markets <TOKEN> [--rpc URL] [--block N] [--json PATH]
 //! lists every canonical Morpho Blue market with TOKEN as collateral (see src/markets.rs).
 //!
-//! Also: exitline-measure snapshot [--rpc URL] [--logs-rpc URL] [--block N] [--out PATH]
+//! Also: egress-measure snapshot [--rpc URL] [--logs-rpc URL] [--block N] [--out PATH]
 //! writes the dashboard's data file, by default web/public/snapshot.json (see src/snapshot.rs).
 //! State reads go to --rpc and eth_getLogs to --logs-rpc, which defaults to the public endpoint:
 //! Alchemy is an archive node but caps log ranges at 10 blocks, and the public endpoint takes any
 //! range but prunes state after a few thousand blocks.
 //!
-//! Usage: exitline-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify]
+//! Usage: egress-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify]
 //!                         [--lenders PATH | --no-lenders] [--only AAPL,NVDA]
 //! The RPC defaults to $ROBINHOOD_RPC_URL, then to Robinhood Chain's public endpoint.
 //!
@@ -109,7 +109,7 @@ fn parse_args() -> Result<Args, String> {
             "--only" => a.only = Some(val()?.split(',').map(|s| s.trim().to_string()).collect()),
             "-h" | "--help" => {
                 println!(
-                    "exitline-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify] [--lenders PATH | --no-lenders] [--only SYMBOLS]"
+                    "egress-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify] [--lenders PATH | --no-lenders] [--only SYMBOLS]"
                 );
                 exit(0);
             }
@@ -269,8 +269,8 @@ fn run_snapshot() -> Result<(), String> {
             }
             "-h" | "--help" => {
                 println!(
-                    "exitline-measure snapshot [--rpc URL] [--logs-rpc URL] [--block N] [--out PATH] [--impacts 500,1000,2000]\n\
-                     exitline-measure snapshot --from-results DIR [--depth-file F] [--lenders-file F] [--markets-file F ...] [--out PATH]"
+                    "egress-measure snapshot [--rpc URL] [--logs-rpc URL] [--block N] [--out PATH] [--impacts 500,1000,2000]\n\
+                     egress-measure snapshot --from-results DIR [--depth-file F] [--lenders-file F] [--markets-file F ...] [--out PATH]"
                 );
                 exit(0);
             }
@@ -349,7 +349,7 @@ fn run_markets() -> Result<(), String> {
             other => return Err(format!("unknown argument {other}")),
         }
     }
-    let token = token.ok_or("usage: exitline-measure markets <TOKEN address or listed symbol>")?;
+    let token = token.ok_or("usage: egress-measure markets <TOKEN address or listed symbol>")?;
     let token = match LISTED.iter().find(|(_, s)| s.eq_ignore_ascii_case(&token)) {
         Some((a, _)) => *a,
         None => token.parse::<Address>().map_err(|_| format!("{token} is neither an address nor a listed symbol"))?,

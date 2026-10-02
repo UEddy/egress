@@ -7,7 +7,7 @@ interface IUniswapV3PoolSwap {
         returns (int256 amount0, int256 amount1);
 }
 
-/// Never deployed. exitline-measure --verify places this runtime code at an unused address with an
+/// Never deployed. egress-measure --verify places this runtime code at an unused address with an
 /// eth_call state override, then runs the pool's real swap to a price limit. The swap callback
 /// reverts with the amounts, so nothing is paid and no state survives the call.
 contract SwapProbe {

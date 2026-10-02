@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {ExitlineGuard} from "./ExitlineGuard.sol";
+import {EgressGuard} from "./EgressGuard.sol";
 import {IDepthEngine} from "./interfaces/IDepthEngine.sol";
 import {IVaultV2Minimal} from "./interfaces/IExternal.sol";
 
 /// @title GuardFactory
-/// @notice Deploys an ExitlineGuard for any Morpho Vault V2 vault, all sharing one depth engine.
+/// @notice Deploys an EgressGuard for any Morpho Vault V2 vault, all sharing one depth engine.
 /// @dev Deploying a guard grants it nothing. It only acts once the vault owner calls
 /// `setIsSentinel(guard, true)`. Before doing that, a vault owner should check that the guard's
 /// owner is someone they trust, since the guard owner sets the parameters the guard cuts with.
@@ -30,10 +30,10 @@ contract GuardFactory {
     /// @notice Deploys a guard for `vault`, owned by `owner`, giving each engine call `engineGasLimit`.
     function createGuard(IVaultV2Minimal vault, address owner, uint64 minGap, uint256 engineGasLimit)
         external
-        returns (ExitlineGuard guard)
+        returns (EgressGuard guard)
     {
         if (owner == address(0)) revert ZeroAddress();
-        guard = new ExitlineGuard(owner, vault, engine, minGap, engineGasLimit);
+        guard = new EgressGuard(owner, vault, engine, minGap, engineGasLimit);
         isGuard[address(guard)] = true;
         _guardsByVault[address(vault)].push(address(guard));
         emit GuardCreated(address(guard), address(vault), owner, minGap, engineGasLimit);

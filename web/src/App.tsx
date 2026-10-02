@@ -62,7 +62,7 @@ export default function App() {
       <header className="bar">
         <div className="bar-in">
           <a className="mark" href="#top">
-            Exitline
+            Egress
           </a>
           <nav aria-label="Sections">
             <ul>
@@ -87,7 +87,7 @@ export default function App() {
             measured against what can actually be sold.
           </h1>
           <p className="lede">
-            Exitline walks Uniswap V3 tick by tick, onchain, to find how much of a stock a seller
+            Egress walks Uniswap V3 tick by tick, onchain, to find how much of a stock a seller
             could really get out before the price falls. When loans outgrow that, it stops new
             lending before the shortfall lands on lenders.
           </p>
@@ -314,7 +314,7 @@ export default function App() {
             The guard
           </h2>
           <p className="note">
-            Exitline installs as a sentinel on a Morpho Vault V2 vault. Vault V2 lets a sentinel
+            Egress installs as a sentinel on a Morpho Vault V2 vault. Vault V2 lets a sentinel
             lower supply caps immediately, while every raise goes through the curator's timelock.
             That asymmetry is the design.
           </p>

@@ -1,4 +1,4 @@
-// Shape of web/public/snapshot.json, written by `exitline-measure snapshot`.
+// Shape of web/public/snapshot.json, written by `egress-measure snapshot`.
 // Every amount is an integer string in the token's own units, so nothing loses precision in JSON.
 
 export type SnapPool = {

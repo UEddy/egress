@@ -6,7 +6,7 @@ import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step
 import {IDepthEngine} from "./interfaces/IDepthEngine.sol";
 import {IVaultV2Minimal, IUniswapV3PoolTokens, IStockToken, IAggregatorV3} from "./interfaces/IExternal.sol";
 
-/// @title ExitlineGuard
+/// @title EgressGuard
 /// @notice Lowers a Morpho Vault V2 vault's per-stock lending cap when the stock can no longer be
 /// sold onchain in the size the vault has lent against it.
 /// @dev The guard is installed as a Vault V2 *sentinel*. Vault V2 lets a sentinel lower caps
@@ -24,7 +24,7 @@ import {IVaultV2Minimal, IUniswapV3PoolTokens, IStockToken, IAggregatorV3} from 
 /// unless the caller supplied enough gas for every pool's full budget plus the work after it. So a
 /// pool counted as failed always failed within its full budget; a keeper cannot starve the engine
 /// (or the cap cut) to push a reading down or up.
-contract ExitlineGuard is Ownable2Step {
+contract EgressGuard is Ownable2Step {
     /* CONSTANTS */
 
     uint256 public constant WINDOW = 5;

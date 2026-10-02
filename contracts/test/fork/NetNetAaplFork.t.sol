@@ -6,12 +6,12 @@ import {Test} from "forge-std/Test.sol";
 import {IVaultV2} from "vault-v2/interfaces/IVaultV2.sol";
 import {ErrorsLib} from "vault-v2/libraries/ErrorsLib.sol";
 
-import {ExitlineGuard} from "../../src/ExitlineGuard.sol";
+import {EgressGuard} from "../../src/EgressGuard.sol";
 import {GuardFactory} from "../../src/GuardFactory.sol";
 import {IVaultV2Minimal} from "../../src/interfaces/IExternal.sol";
 import {MockFeed, MockEngine} from "../mocks/Mocks.sol";
 
-/// @notice Simulation on a local fork of Robinhood Chain mainnet: an ExitlineGuard on the real
+/// @notice Simulation on a local fork of Robinhood Chain mainnet: an EgressGuard on the real
 /// NetNet Credit Vault V2, cutting its AAPL collateral cap. Nothing is broadcast; the owner and
 /// curator are impersonated only inside the fork.
 ///
@@ -41,7 +41,7 @@ contract NetNetAaplForkTest is Test {
     uint256[] depths;
     MockEngine engine;
     MockFeed feed;
-    ExitlineGuard guard;
+    EgressGuard guard;
 
     function setUp() public {
         forkBlock = vm.envOr("FORK_BLOCK", uint256(0));
@@ -67,7 +67,7 @@ contract NetNetAaplForkTest is Test {
         vm.prank(VAULT.owner());
         VAULT.setIsSentinel(address(guard), true);
 
-        ExitlineGuard.Config memory c;
+        EgressGuard.Config memory c;
         c.coverageBps = COVERAGE_BPS;
         c.maxImpactBps = IMPACT_BPS;
         c.closedHaircutBps = 5_000;
@@ -91,7 +91,7 @@ contract NetNetAaplForkTest is Test {
         vm.warp(block.timestamp + GAP);
     }
 
-    function _median(ExitlineGuard.Reading[] memory r) internal pure returns (uint256) {
+    function _median(EgressGuard.Reading[] memory r) internal pure returns (uint256) {
         uint256[] memory v = new uint256[](r.length);
         for (uint256 i; i < r.length; ++i) {
             v[i] = r[i].target;
