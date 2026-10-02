@@ -5,7 +5,7 @@ import { encodeFunctionData, decodeFunctionResult } from 'viem'
 // file may come from an environment variable, for that reason.
 export const PUBLIC_RPC = 'https://rpc.mainnet.chain.robinhood.com'
 export const EXPLORER = 'https://robinhoodchain.blockscout.com'
-export const REPO = 'https://github.com/UEddy/exitline'
+export const REPO = 'https://github.com/UEddy/egress'
 
 // Only viem's ABI codec is imported, not createPublicClient: the one call this page makes is a
 // single eth_call, and the client machinery would cost more than the whole rest of the bundle.
