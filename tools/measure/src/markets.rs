@@ -206,29 +206,34 @@ fn nominees(rpc: &Rpc, event: B256, id: B256, index: usize, from: u64) -> Result
     rpc.logs(BLUE, &[Some(event), Some(id)], from)?.iter().map(|l| topic_addr(l, index)).collect()
 }
 
-pub fn run(rpc: &Rpc, chain_id: u64, block: u64, now: u64, token: Address) -> Result<MarketsReport, String> {
-    let symbol = rpc.call(token, IERC20::symbolCall {})?;
-    let decimals = rpc.call(token, IERC20::decimalsCall {})?;
-
+/// Every market ever created on canonical Blue, as (id, collateral token, creation block). Scanning
+/// this once lets a caller cover several collaterals without repeating the log query per token.
+pub fn created_markets(rpc: &Rpc) -> Result<Vec<(B256, Address, u64)>, String> {
     // CreateMarket(bytes32 indexed id, MarketParams marketParams): collateral is the 2nd word.
     let created = rpc.logs(BLUE, &[Some(CREATE_MARKET)], 0)?;
-    let mut found = Vec::new();
+    let mut out = Vec::with_capacity(created.len());
     for log in &created {
         let data: alloy_primitives::Bytes =
             log["data"].as_str().and_then(|d| d.parse().ok()).ok_or_else(|| format!("bad CreateMarket log {log}"))?;
         if data.len() < 64 {
             return Err(format!("short CreateMarket log {log}"));
         }
-        if Address::from_slice(&data[44..64]) == token {
-            let id: B256 = log["topics"][1].as_str().and_then(|t| t.parse().ok()).ok_or("bad market id")?;
-            found.push((id, log_block(log)?));
-        }
+        let id: B256 = log["topics"][1].as_str().and_then(|t| t.parse().ok()).ok_or("bad market id")?;
+        out.push((id, Address::from_slice(&data[44..64]), log_block(log)?));
     }
-    eprintln!("{} markets on Blue, {} with {symbol} collateral", created.len(), found.len());
+    Ok(out)
+}
 
-    let mut markets = Vec::new();
-    let mut collateral_found = U256::ZERO;
-    for (id, created_block) in found {
+/// One market's row: totals accrued to `now`, every position found through its logs, and suppliers
+/// classified against the vault registries. Also returns the collateral summed over all positions.
+pub fn market_row(
+    rpc: &Rpc,
+    id: B256,
+    created_block: u64,
+    now: u64,
+    token: Address,
+) -> Result<(MarketRow, U256), String> {
+    {
         let p = rpc.call(BLUE, IMorpho::idToMarketParamsCall { id })?;
         if p.collateralToken != token {
             return Err(format!("market {id}: idToMarketParams collateral {} != {token}", p.collateralToken));
@@ -260,14 +265,13 @@ pub fn run(rpc: &Rpc, chain_id: u64, block: u64, now: u64, token: Address) -> Re
                 supply_rows.push((u, assets));
             }
         }
-        collateral_found += collateral;
         supply_rows.sort_by_key(|r| std::cmp::Reverse(r.1));
         let suppliers = supply_rows
             .into_iter()
             .map(|(u, assets)| classify(rpc, u, assets))
             .collect::<Result<Vec<_>, _>>()?;
 
-        markets.push(MarketRow {
+        let row = MarketRow {
             id,
             created_block,
             loan_symbol: rpc.call(p.loanToken, IERC20::symbolCall {})?,
@@ -282,7 +286,26 @@ pub fn run(rpc: &Rpc, chain_id: u64, block: u64, now: u64, token: Address) -> Re
             collateral: collateral.to_string(),
             borrowers,
             suppliers,
-        });
+        };
+        Ok((row, collateral))
+    }
+}
+
+pub fn run(rpc: &Rpc, chain_id: u64, block: u64, now: u64, token: Address) -> Result<MarketsReport, String> {
+    let symbol = rpc.call(token, IERC20::symbolCall {})?;
+    let decimals = rpc.call(token, IERC20::decimalsCall {})?;
+
+    let created = created_markets(rpc)?;
+    let found: Vec<(B256, u64)> =
+        created.iter().filter(|(_, c, _)| *c == token).map(|&(id, _, b)| (id, b)).collect();
+    eprintln!("{} markets on Blue, {} with {symbol} collateral", created.len(), found.len());
+
+    let mut markets = Vec::new();
+    let mut collateral_found = U256::ZERO;
+    for (id, created_block) in found {
+        let (row, collateral) = market_row(rpc, id, created_block, now, token)?;
+        collateral_found += collateral;
+        markets.push(row);
     }
 
     let blue_balance = rpc.call(token, IERC20::balanceOfCall { who: BLUE })?;

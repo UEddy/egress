@@ -11,7 +11,9 @@ use alloy_sol_types::{sol, SolCall};
 use exitline_engine::walk::PoolReader;
 use serde_json::{json, Value};
 
-const MAX_TRIES: u32 = 6;
+/// The public endpoint throttles hard under sustained log queries, and its backoff needs to outlast
+/// a burst: 8 tries at 250 ms doubling is about 31 s of patience before giving up.
+const MAX_TRIES: u32 = 8;
 /// Requests per JSON-RPC batch. The public Robinhood endpoint rate limits per request inside a
 /// batch; 20 passes, 100 does not.
 const BATCH: usize = 20;
@@ -19,6 +21,10 @@ const BATCH: usize = 20;
 pub struct Rpc {
     agent: ureq::Agent,
     url: String,
+    /// Endpoint for eth_getLogs only. Alchemy's free tier caps log ranges at 10 blocks, while the
+    /// public endpoint is not an archive node, so state and logs may have to come from different
+    /// places. Defaults to `url`, which keeps single-endpoint callers unchanged.
+    logs_url: String,
     block: String,
     next_id: Cell<u64>,
     pub calls: Cell<u64>,
@@ -27,7 +33,30 @@ pub struct Rpc {
 impl Rpc {
     pub fn new(url: &str) -> Self {
         let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(30)).build();
-        Rpc { agent, url: url.to_string(), block: "latest".into(), next_id: Cell::new(1), calls: Cell::new(0) }
+        Rpc {
+            agent,
+            url: url.to_string(),
+            logs_url: url.to_string(),
+            block: "latest".into(),
+            next_id: Cell::new(1),
+            calls: Cell::new(0),
+        }
+    }
+
+    /// Sends eth_getLogs to a different endpoint than state reads.
+    pub fn set_logs_endpoint(&mut self, url: &str) {
+        self.logs_url = url.to_string();
+    }
+
+    pub fn logs_endpoint(&self) -> &str {
+        &self.logs_url
+    }
+
+    /// The endpoint's current head, without pinning anything.
+    pub fn head(&self) -> Result<u64, String> {
+        let v = self.request("eth_blockNumber", json!([]))?;
+        let s = v.as_str().ok_or("eth_blockNumber: not a string")?;
+        u64::from_str_radix(s.trim_start_matches("0x"), 16).map_err(|e| e.to_string())
     }
 
     /// A second client on the same endpoint and pinned block, for another thread.
@@ -35,6 +64,7 @@ impl Rpc {
         Rpc {
             agent: self.agent.clone(),
             url: self.url.clone(),
+            logs_url: self.logs_url.clone(),
             block: self.block.clone(),
             next_id: Cell::new(1),
             calls: Cell::new(0),
@@ -50,10 +80,14 @@ impl Rpc {
     /// Posts `body`, retrying with backoff while the endpoint rate limits or fails transiently.
     /// A batch whose items come back rate limited is retried whole.
     fn post(&self, body: &Value, what: &str) -> Result<Value, String> {
+        self.post_to(&self.url, body, what)
+    }
+
+    fn post_to(&self, url: &str, body: &Value, what: &str) -> Result<Value, String> {
         let mut wait = Duration::from_millis(250);
         for attempt in 1..=MAX_TRIES {
             self.calls.set(self.calls.get() + 1);
-            match self.agent.post(&self.url).send_json(body) {
+            match self.agent.post(url).send_json(body) {
                 Ok(resp) => {
                     let v: Value = resp.into_json().map_err(|e| format!("{what}: bad json: {e}"))?;
                     if !(rate_limited(&v) && attempt < MAX_TRIES) {
@@ -74,6 +108,11 @@ impl Rpc {
     fn request(&self, method: &str, params: Value) -> Result<Value, String> {
         let v = self.post(&self.body(method, params), method)?;
         unwrap_result(&v, method)
+    }
+
+    fn request_logs(&self, params: Value) -> Result<Value, String> {
+        let v = self.post_to(&self.logs_url, &self.body("eth_getLogs", params), "eth_getLogs")?;
+        unwrap_result(&v, "eth_getLogs")
     }
 
     /// Sends `reqs` as JSON-RPC batches and returns one result per request, in order.
@@ -148,7 +187,7 @@ impl Rpc {
                 "fromBlock": format!("0x{a:x}"),
                 "toBlock": format!("0x{b:x}"),
             }]);
-            match self.request("eth_getLogs", params) {
+            match self.request_logs(params) {
                 Ok(Value::Array(logs)) => out.extend(logs),
                 Ok(v) => return Err(format!("eth_getLogs: unexpected {v}")),
                 // Too many results, too slow, or (since Sep 29) a range over 10M blocks.

@@ -5,6 +5,12 @@
 //! Also: exitline-measure markets <TOKEN> [--rpc URL] [--block N] [--json PATH]
 //! lists every canonical Morpho Blue market with TOKEN as collateral (see src/markets.rs).
 //!
+//! Also: exitline-measure snapshot [--rpc URL] [--logs-rpc URL] [--block N] [--out PATH]
+//! writes the dashboard's data file, by default web/public/snapshot.json (see src/snapshot.rs).
+//! State reads go to --rpc and eth_getLogs to --logs-rpc, which defaults to the public endpoint:
+//! Alchemy is an archive node but caps log ranges at 10 blocks, and the public endpoint takes any
+//! range but prunes state after a few thousand blocks.
+//!
 //! Usage: exitline-measure [--rpc URL] [--block N] [--impacts 500,1000,2000] [--json PATH] [--verify]
 //!                         [--lenders PATH | --no-lenders] [--only AAPL,NVDA]
 //! The RPC defaults to $ROBINHOOD_RPC_URL, then to Robinhood Chain's public endpoint.
@@ -18,6 +24,7 @@
 mod lenders;
 mod markets;
 mod rpc;
+mod snapshot;
 
 use std::collections::BTreeMap;
 use std::process::exit;
@@ -39,6 +46,9 @@ const DENAR_VAULT: Address = address!("F0E6AD006080c48766ddb95b8c568D72bC059050"
 const FEE_TIERS: [u32; 4] = [100, 500, 3000, 10000];
 /// Offchain step bound. Far above MAX_STEPS so a capped onchain reading can be seen and sized.
 const OFFCHAIN_STEPS: u32 = 20_000;
+/// Blocks to stay below the lower of the two endpoints' heads when pinning, so the pinned block is
+/// certainly present on both.
+const HEAD_MARGIN: u64 = 4;
 /// Unused address where --verify places the probe's runtime code for the duration of an eth_call.
 const PROBE: Address = address!("00000000000000000000000000000000E71711e0");
 /// Runtime code of probe/SwapProbe.sol (solc 0.8.28, optimizer 200 runs, evm cancun).
@@ -189,14 +199,139 @@ struct StockReport {
 }
 
 fn main() {
-    let res = if std::env::args().nth(1).as_deref() == Some("markets") {
-        run_markets()
-    } else {
-        parse_args().and_then(run)
+    let res = match std::env::args().nth(1).as_deref() {
+        Some("markets") => run_markets(),
+        Some("snapshot") => run_snapshot(),
+        _ => parse_args().and_then(run),
     };
     if let Err(e) = res {
         fail(&e);
     }
+}
+
+/// USDG: the non-NVDA side of the NVDA/USDG pool, after checking the pool really is Uniswap's and
+/// the token really calls itself USDG. Nothing here trusts a hardcoded address on its own.
+fn discover_usdg(rpc: &Rpc) -> Result<(Address, u8), String> {
+    let factory = rpc.call(NVDA_USDG_POOL, IUniswapV3Pool::factoryCall {})?;
+    ensure(factory == UNIV3_FACTORY, || format!("NVDA/USDG pool factory is {factory}, not Uniswap V3"))?;
+    let t0 = rpc.call(NVDA_USDG_POOL, IUniswapV3Pool::token0Call {})?;
+    let t1 = rpc.call(NVDA_USDG_POOL, IUniswapV3Pool::token1Call {})?;
+    let usdg = match (t0 == NVDA, t1 == NVDA) {
+        (true, false) => t1,
+        (false, true) => t0,
+        _ => return Err(format!("NVDA/USDG pool tokens are {t0}, {t1}")),
+    };
+    let usdg_symbol = symbol(rpc, usdg)?;
+    ensure(usdg_symbol == "USDG", || format!("{usdg} symbol is {usdg_symbol:?}, expected USDG"))?;
+    let decimals = rpc.call(usdg, IERC20::decimalsCall {})?;
+    eprintln!("USDG {usdg} ({decimals} decimals)");
+    Ok((usdg, decimals))
+}
+
+/// `snapshot`: writes the dashboard's data file for one pinned block.
+fn run_snapshot() -> Result<(), String> {
+    let mut rpc_url =
+        std::env::var("ROBINHOOD_RPC_URL").ok().filter(|s| s.starts_with("http")).unwrap_or(PUBLIC_RPC.into());
+    let mut block = None;
+    // Logs default to the public endpoint whatever --rpc is, because it is the only one that
+    // accepts a wide block range. Pass --logs-rpc to override.
+    let mut logs_rpc: String = PUBLIC_RPC.into();
+    let mut out: String = concat!(env!("CARGO_MANIFEST_DIR"), "/../../web/public/snapshot.json").into();
+    let mut lenders_path: String = concat!(env!("CARGO_MANIFEST_DIR"), "/lenders.json").into();
+    let mut impacts = vec![500u64, 1000, 2000];
+    let mut from_results: Option<String> = None;
+    let mut depth_file: Option<String> = None;
+    let mut lenders_file: Option<String> = None;
+    let mut markets_files: Vec<String> = Vec::new();
+    let mut it = std::env::args().skip(2);
+    while let Some(a) = it.next() {
+        let mut val = || it.next().ok_or(format!("{a} needs a value"));
+        match a.as_str() {
+            "--rpc" => rpc_url = val()?,
+            "--logs-rpc" => logs_rpc = val()?,
+            "--block" => block = Some(val()?.parse::<u64>().map_err(|e| format!("--block: {e}"))?),
+            "--out" => out = val()?,
+            "--lenders" => lenders_path = val()?,
+            // Offline: assemble the file from reports that already ran, each labelled with its
+            // own block. Defaults pick the newest matching report in the directory.
+            "--from-results" => from_results = Some(val()?),
+            "--depth-file" => depth_file = Some(val()?),
+            "--lenders-file" => lenders_file = Some(val()?),
+            "--markets-file" => markets_files.push(val()?),
+            "--impacts" => {
+                impacts = val()?
+                    .split(',')
+                    .map(|s| s.trim().parse::<u64>().map_err(|e| format!("--impacts: {e}")))
+                    .collect::<Result<_, _>>()?;
+                if impacts.iter().any(|&b| b == 0 || b >= 10_000) {
+                    return Err("--impacts: each bound must be in 1..9999 bps".into());
+                }
+            }
+            "-h" | "--help" => {
+                println!(
+                    "exitline-measure snapshot [--rpc URL] [--logs-rpc URL] [--block N] [--out PATH] [--impacts 500,1000,2000]\n\
+                     exitline-measure snapshot --from-results DIR [--depth-file F] [--lenders-file F] [--markets-file F ...] [--out PATH]"
+                );
+                exit(0);
+            }
+            other => return Err(format!("unknown argument {other}")),
+        }
+    }
+
+    // Composing from reports that already ran needs no network at all.
+    if let Some(dir) = from_results {
+        let pick = |pat: &str| -> Result<String, String> {
+            let mut hits: Vec<String> = std::fs::read_dir(&dir)
+                .map_err(|e| format!("{dir}: {e}"))?
+                .filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .filter(|n| n.contains(pat) && n.ends_with(".json"))
+                .collect();
+            hits.sort();
+            hits.pop().map(|n| format!("{dir}/{n}")).ok_or(format!("{dir}: no {pat}*.json"))
+        };
+        let depth = depth_file.map_or_else(|| pick("engine-crosscheck-"), Ok)?;
+        let lend = lenders_file.map_or_else(|| pick("denar-"), Ok)?;
+        let mkts = if markets_files.is_empty() {
+            std::fs::read_dir(&dir)
+                .map_err(|e| format!("{dir}: {e}"))?
+                .filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .filter(|n| n.contains("-markets-") && n.ends_with(".json"))
+                .map(|n| format!("{dir}/{n}"))
+                .collect()
+        } else {
+            markets_files
+        };
+        return snapshot::from_results(&depth, &lend, &mkts, &out);
+    }
+
+    let mut rpc = Rpc::new(&rpc_url);
+    let chain_id = rpc.chain_id()?;
+    ensure(chain_id == CHAIN_ID, || format!("chain id {chain_id}, expected {CHAIN_ID}"))?;
+
+    // State reads and log reads can need different endpoints: Alchemy is an archive node but caps
+    // eth_getLogs at a 10 block range, while the public endpoint takes any range but prunes state
+    // after a few thousand blocks. Pin below both heads so the one block is valid on each.
+    if logs_rpc != rpc_url {
+        rpc.set_logs_endpoint(&logs_rpc);
+        let probe = Rpc::new(&logs_rpc);
+        let lid = probe.chain_id()?;
+        ensure(lid == CHAIN_ID, || format!("logs endpoint chain id {lid}, expected {CHAIN_ID}"))?;
+        if block.is_none() {
+            let (state_head, logs_head) = (rpc.head()?, probe.head()?);
+            let pin = state_head.min(logs_head).saturating_sub(HEAD_MARGIN);
+            eprintln!("state head {state_head}, logs head {logs_head}, pinning {pin}");
+            block = Some(pin);
+        }
+    }
+
+    let (number, timestamp) = rpc.pin_block(block)?;
+    eprintln!("chain {chain_id}, block {number} (timestamp {timestamp})");
+    eprintln!("  state rpc {}", redact(&rpc_url));
+    eprintln!("  logs  rpc {}", redact(rpc.logs_endpoint()));
+    let (usdg, usdg_decimals) = discover_usdg(&rpc)?;
+    snapshot::run(&mut rpc, chain_id, number, timestamp, usdg, usdg_decimals, &lenders_path, &impacts, &out)
 }
 
 fn run_markets() -> Result<(), String> {
@@ -344,20 +479,7 @@ fn run(args: Args) -> Result<(), String> {
     let (block, timestamp) = rpc.pin_block(args.block)?;
     eprintln!("chain {chain_id}, block {block} (timestamp {timestamp}), rpc {}", redact(&args.rpc));
 
-    // USDG: the non-NVDA side of the NVDA/USDG pool, after checking the pool is Uniswap's.
-    let factory = rpc.call(NVDA_USDG_POOL, IUniswapV3Pool::factoryCall {})?;
-    ensure(factory == UNIV3_FACTORY, || format!("NVDA/USDG pool factory is {factory}, not Uniswap V3"))?;
-    let t0 = rpc.call(NVDA_USDG_POOL, IUniswapV3Pool::token0Call {})?;
-    let t1 = rpc.call(NVDA_USDG_POOL, IUniswapV3Pool::token1Call {})?;
-    let usdg = match (t0 == NVDA, t1 == NVDA) {
-        (true, false) => t1,
-        (false, true) => t0,
-        _ => return Err(format!("NVDA/USDG pool tokens are {t0}, {t1}")),
-    };
-    let usdg_symbol = symbol(&rpc, usdg)?;
-    ensure(usdg_symbol == "USDG", || format!("{usdg} symbol is {usdg_symbol:?}, expected USDG"))?;
-    let usdg_decimals = rpc.call(usdg, IERC20::decimalsCall {})?;
-    eprintln!("USDG {usdg} ({usdg_decimals} decimals)");
+    let (usdg, usdg_decimals) = discover_usdg(&rpc)?;
 
     // Denar equity vault (MetaMorpho V1) on Denar's own Morpho Blue instance.
     let blue = rpc.call(DENAR_VAULT, IMetaMorpho::MORPHOCall {})?;

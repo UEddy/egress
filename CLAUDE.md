@@ -54,6 +54,28 @@ Loan asset: USDG (Paxos). Judges give extra consideration for USDG.
   check that collateral over all positions equals `token.balanceOf(Blue)`.
   JSON output never contains individual addresses: borrowers, non-vault suppliers and per-borrower
   contracts (Arcadia accounts, Gage loan accounts, Turret offer vaults) are left out.
+- `web/` Dashboard: Vite + React + TypeScript + viem, a static build for Vercel's free tier.
+  Renders from `web/public/snapshot.json` (imported at build time, so the page needs no network to
+  draw) and shows the block the snapshot was taken at. A "Check live" button per stock calls the
+  deployed engine's `sellProceeds` at 5% on each of that stock's pools, on click only, one stock at
+  a time, sequentially per pool, and prints the live total beside the snapshot value.
+  The browser only ever uses the PUBLIC endpoint, hardcoded in `web/src/chain.ts`. The frontend
+  reads no environment variable at all: a static bundle is readable by every visitor, so a keyed RPC
+  URL must never reach it. Verified after each build by grepping `dist/` for the key and for
+  "alchemy".
+- `tools/measure snapshot` writes that file: one pinned block, sellable depth at 5/10/20% per stock,
+  the chain-wide lender inventory, and every canonical Blue market with a stock as collateral with
+  its vaults' allocations and borrows. Markets with nothing supplied are filled from `market(id)`
+  alone, skipping the three log queries per market that the full scan needs, which is also exactly
+  the set the page hides.
+  A single-block run does not currently complete on the free tiers available (see the RPC notes),
+  so `snapshot --from-results DIR` composes the file offline from reports in
+  `tools/measure/results`, each section labelled with its own block in a `sources` array, and the
+  page prints those blocks per section. THE COMMITTED snapshot.json IS COMPOSITE. Because holdings
+  and depth then come from different blocks, each stock also carries `sellable_at_lent_block`, the
+  depth measured in the SAME run as the holdings, and the page uses that pair for the headline gap
+  and the flag. Comparing holdings against the newer depth run would overstate the gap: AAPL reads
+  301,439 lent against 194,631 sellable at one block, but against 122,242 across blocks.
 - `crosscheck/` Solidity 0.7.6 project with real Uniswap v3-core. Builds pools, runs real swaps to
   price limits, writes `engine/fixtures/*.json`. The Rust tests replay them and require the engine
   to equal the real swap output **to the wei**.
@@ -210,7 +232,7 @@ Stretch: sentinel `deallocate`; Uniswap V4 pools via StateView.
 | Uniswap V3 factory | 0x1f7d7550b1b028f7571e69a784071f0205fd2efa | Uniswap/sdks |
 | Uniswap V4 StateView | 0xf3334192d15450cdd385c8b70e03f9a6bd9e673b | Uniswap/sdks |
 | WETH | 0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73 | Robinhood docs |
-| NVDA | 0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC | Robinscan, verified |
+| NVDA | 0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC | explorer, and symbol() checked onchain |
 | NVDA/USDG Uniswap V3 pool (largest, ~$5.7M) | 0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3 | DexScreener |
 | Denar equity Morpho Blue (separate instance) | 0xf0A0a33729270586cDD66010B1cedE649745c3A5 | Denar docs |
 | Denar USDG vault (MetaMorpho V1, equity) | 0xF0E6AD006080c48766ddb95b8c568D72bC059050 | Denar docs |
@@ -267,10 +289,23 @@ Oracles of the main stock markets on canonical Blue (read at block 75829408):
 
 RPC. $ROBINHOOD_RPC_URL is now an Alchemy endpoint (chain id 4663 confirmed) and it IS an archive
 node: reads 500,000 blocks back succeed, so pinned-block work no longer has to race a state window.
+BUT its free tier caps `eth_getLogs` at a TEN BLOCK range ("Under the Free tier plan, you can make
+eth_getLogs requests with up to a 10 block range"), which makes every log-scanning path unusable on
+it: `markets`, `snapshot` and the lender discovery must run against the public endpoint. Use Alchemy
+for state reads at a pinned block, the public endpoint for anything that reads logs. `Rpc` supports
+exactly that split: `set_logs_endpoint` sends only eth_getLogs elsewhere, and `snapshot` uses it by
+default (state from $ROBINHOOD_RPC_URL, logs from the public endpoint, `--logs-rpc` to override),
+pinning 4 blocks below the lower of the two heads so the one block is valid on both. Without the
+split a snapshot run cannot finish: on the public endpoint alone it took 11 minutes, longer than the
+state window, and still ended in a 429. WITH the split it still does not finish: all six market
+scans complete in about 6 minutes, then Alchemy 429s on eth_call for the position and balance reads.
+Three attempts, three different failure points. Until one endpoint allows both wide log ranges and
+sustained state reads, build the dashboard file with `snapshot --from-results` instead. A paid tier
+on either side, or a self-hosted node, would make the single-block run work.
 It throttles bursts instead: tools/measure's batches of 20 drew HTTP 429 under load, and so did
 single calls for a while afterwards. Space requests out and retry on 429.
 The public endpoint https://rpc.mainnet.chain.robinhood.com still works (batches of 20 pass, 100 do
-not) but is not archive: it keeps state for roughly 4,000-8,000 blocks (~7-13 min), so a pinned-block
+not) and is the only one that can scan logs, but is not archive: it keeps state for roughly 4,000-8,000 blocks (~7-13 min), so a pinned-block
 run against it must finish inside that window. It also returns HTTP 403 to clients that do not send a
 browser-like User-Agent (python-urllib's default is refused; cast and reqwest are fine).
 A `--verify` run with lenders takes ~4.5 min; with --no-lenders about 55 s.
@@ -292,6 +327,10 @@ cargo run --features export-abi         # prints the Solidity ABI
 cd ../tools/measure && cargo run --release -- --verify --json results/denar-<block>.json
 cargo run --release -- markets AAPL --json results/aapl-markets-<block>.json
 cargo run --release -- --only AAPL --impacts 500 --no-lenders   # one stock, one bound, fast
+cargo run --release -- snapshot          # one pinned block; does not currently finish, see below
+cargo run --release -- snapshot --from-results results   # offline compose, what the repo ships
+#   the live form sends state reads to $ROBINHOOD_RPC_URL and eth_getLogs to the public endpoint
+cd ../../web && npm install && npm run build && npm run preview   # static build, then a local preview
 cd ../.. && contracts/script/fork-netnet-aapl.sh   # measure + fork test at the same block (~30 s)
 # how the deployed engine was built and shipped (see the status notes before reusing this):
 #   build reproducibly on a copy outside the repo, since the container writes artifacts as root

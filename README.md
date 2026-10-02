@@ -202,6 +202,51 @@ existing allocation to AAPL was about 197,000 USDG, well above the new cap, so t
 lending without touching open positions. Each run then confirms the guard cannot raise the cap back,
 and that the curator restores it only after the three day timelock.
 
+## Dashboard
+
+A static site in `web/` (Vite, React, TypeScript, viem) showing the measured position: total stock
+collateral held by lending contracts, the AAPL gap, and every stock's lent amount against sellable
+depth at 5, 10 and 20 percent, flagged where lending exceeds depth.
+
+It renders from `web/public/snapshot.json`, which is committed, so the page draws with no network
+request and states the block each number was measured at. That file is composed from measured runs
+held in `tools/measure/results`, and the page labels every section with its own block: depth and
+pools from one run, the lender inventory from another, the AAPL markets from a third. Where
+holdings are compared against depth, both figures come from the same run, so the comparison is at
+one block. Each stock also has a **Check live** button
+that calls the deployed engine's `sellProceeds` at 5 percent on that stock's pools straight from the
+browser and prints the live total beside the snapshot value. Those calls happen on click only, one
+stock at a time, and go to Robinhood Chain's public endpoint. The frontend reads no environment
+variable and contains no private RPC URL: a static bundle is readable by anyone who loads it.
+
+```bash
+cd web
+npm install
+npm run build      # typecheck, then a static build into web/dist
+npm run preview    # serve the build locally
+npm run dev        # or the dev server while editing
+```
+
+Refresh the data at a new block:
+
+```bash
+cd tools/measure
+cargo run --release -- snapshot --from-results results
+```
+
+That composes `web/public/snapshot.json` offline from the reports in `tools/measure/results`, with
+no network access at all, and prints which block each section came from.
+
+There is also a single pinned block form, `cargo run --release -- snapshot`, which reads state from
+`$ROBINHOOD_RPC_URL` and sends only `eth_getLogs` to the public endpoint. It does not currently
+finish on free RPC tiers: the public endpoint takes wide log ranges but prunes state after a few
+thousand blocks, while the archive endpoint holds state but caps `eth_getLogs` at a ten block range
+and throttles sustained `eth_call`. One endpoint that allows both would make it work. Until then the
+composed file is what the site ships, and the Check live button is what proves the numbers current.
+
+The build output is a plain static directory, so any static host serves it. On Vercel the Vite preset
+needs no configuration beyond the `web` root directory.
+
 ## Known limits
 
 Stated plainly, because a risk tool that oversells itself is worse than none.
@@ -234,8 +279,9 @@ Stated plainly, because a risk tool that oversells itself is worse than none.
 ## Layout
 
 ```
-engine/       Rust Stylus contract, the depth engine (view only)
-contracts/    Solidity 0.8.28, the sentinel guard and its factory (Foundry)
-crosscheck/   Solidity 0.7.6 with real Uniswap v3-core, generates test fixtures
-tools/measure/ Rust CLI for onchain depth, lender inventory and market listings
+engine/        Rust Stylus contract, the depth engine (view only)
+contracts/     Solidity 0.8.28, the sentinel guard and its factory (Foundry)
+crosscheck/    Solidity 0.7.6 with real Uniswap v3-core, generates test fixtures
+tools/measure/ Rust CLI for onchain depth, lender inventory, market listings and the snapshot
+web/           Dashboard: static Vite, React and TypeScript site, reads the snapshot
 ```

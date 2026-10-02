@@ -1,0 +1,658 @@
+{
+  "chain_id": 4663,
+  "block": 77749579,
+  "timestamp": 1790895405,
+  "taken_at_utc": "2026-10-01T22:56:45Z",
+  "usdg": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "usdg_decimals": 6,
+  "engine": "0x276f4933f06b77912384d64291e062885c33e031",
+  "morpho_blue": "0x9d53d5e3bd5e8d4cbfa6db1ca238aea02e651010",
+  "impacts_bps": [
+    500,
+    1000,
+    2000
+  ],
+  "composite": true,
+  "sources": [
+    {
+      "section": "depth",
+      "file": "engine-crosscheck-77749579.json",
+      "block": 77749579,
+      "timestamp": 1790895405,
+      "taken_at_utc": "2026-10-01T22:56:45Z"
+    },
+    {
+      "section": "lenders",
+      "file": "denar-74197325.json",
+      "block": 74197325,
+      "timestamp": 1790538143,
+      "taken_at_utc": "2026-09-27T19:42:23Z"
+    },
+    {
+      "section": "markets:AAPL",
+      "file": "aapl-markets-74741332.json",
+      "block": 74741332,
+      "timestamp": 1790592874,
+      "taken_at_utc": "2026-09-28T10:54:34Z"
+    }
+  ],
+  "totals": {
+    "lent_usdg": "659620002249",
+    "sellable": [
+      "2666673106036",
+      "3825046714202",
+      "4204356027586"
+    ],
+    "holders_checked": 273,
+    "protocols": 9,
+    "markets": 15
+  },
+  "stocks": [
+    {
+      "symbol": "NVDA",
+      "address": "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
+      "decimals": 18,
+      "price_usdg": "231555322",
+      "pools": [
+        {
+          "address": "0xb75d2d02b0ec3de50d32e40a4f1a8dae8acc4333",
+          "fee": 100,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0xd4eb21209c4d6093f80b5b84f5c45cc093ea14a3",
+          "fee": 500,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0xb944cec30bd4175855215d767adc81f39e5f7e2b",
+          "fee": 3000,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0xc277560df3689a401ba7dedd7626168b234ceb5e",
+          "fee": 10000,
+          "stock_is_token0": false
+        }
+      ],
+      "sellable": [
+        "1515389079105",
+        "2347791441716",
+        "2595192895482"
+      ],
+      "engine_sellable": [
+        "1515389079105",
+        "2347791441716",
+        "2595192895482"
+      ],
+      "lent_units": "1392682694398239026004",
+      "lent_usdg": "313946364146",
+      "sellable_at_lent_block": [
+        "2875419479661",
+        "3792337134252",
+        "3952785880513"
+      ],
+      "markets": []
+    },
+    {
+      "symbol": "AAPL",
+      "address": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
+      "decimals": 18,
+      "price_usdg": "330442702",
+      "pools": [
+        {
+          "address": "0xaae0d815ee56e4092a5e5c2911e676fea50b2d6d",
+          "fee": 500,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0x783c9bbb765047cfdd2b84b92b2ca9f11d34b7ed",
+          "fee": 3000,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0x3714aa8105de1f384481b425788af413748c1837",
+          "fee": 10000,
+          "stock_is_token0": false
+        }
+      ],
+      "sellable": [
+        "122242339361",
+        "162428036952",
+        "188982182088"
+      ],
+      "engine_sellable": [
+        "122242339361",
+        "162428036952",
+        "188982182088"
+      ],
+      "lent_units": "884871309095305838117",
+      "lent_usdg": "301439239095",
+      "sellable_at_lent_block": [
+        "194630937856",
+        "253728139472",
+        "294286959579"
+      ],
+      "markets": [
+        {
+          "id": "0xdeb4782d012d5fd3b24962538c2f6559049d70bda4dabd2e4212dacb96c28d45",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "215036561333",
+          "total_borrowed": "101052485879",
+          "collateral_units": "882769179961664142631",
+          "borrower_count": 5,
+          "vaults": [
+            {
+              "address": "0x99347d5f70d3838763f6bddcf80304c8aa953b57",
+              "name": "NetNet Credit",
+              "kind": "vault_v2_adapter",
+              "allocation": "215036561332",
+              "curator": "0x3bb7a23316f82c0e984fa2e784846d8928a35f42",
+              "owner": "0x3bb7a23316f82c0e984fa2e784846d8928a35f42"
+            }
+          ],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x30a2a5f1a098b23ed91eadc4529a8d1c967f2cdc2e40a709f3a5992004b01ac0",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "25000771",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [
+            {
+              "address": "0x026df18fbd2a7639089d0a16293383ec687a5ca1",
+              "name": "Longbow Core USDG",
+              "kind": "vault_v2_adapter",
+              "allocation": "657",
+              "curator": "0xe600452658762042749eb8e11955542b7ebea4bb",
+              "owner": "0x396ae0bd5623c3750e15fd222770f1e972153ed4"
+            }
+          ],
+          "other_supplied": "25000113"
+        },
+        {
+          "id": "0x947ae981cc823024ea00b602f6ea72d049cac05d66ef096198ceeb998651c175",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "1003703",
+          "total_borrowed": "912703",
+          "collateral_units": "12674271229404308",
+          "borrower_count": 1,
+          "vaults": [],
+          "other_supplied": "1003702"
+        },
+        {
+          "id": "0x01ab931866f6753d9246d451284c03d2b9cdf7f351120bc2e79045941777e7aa",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "860000000000000000",
+          "total_supplied": "85742",
+          "total_borrowed": "77203",
+          "collateral_units": "400067285252489",
+          "borrower_count": 1,
+          "vaults": [
+            {
+              "address": "0x5fe15021a7c0ff4a9965b400e474f616451ba128",
+              "name": "Sharewoods RWA USDG",
+              "kind": "vault_v2_adapter",
+              "allocation": "85741",
+              "curator": "0x374ba83b81167176450fef1a4f07a9ec1d21db54",
+              "owner": "0x6f75b9102435352235dd7f4e1acff4ea4d5f2631"
+            }
+          ],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0xcaa167af7ba0422c76424fae56167b7db25bf19f4f435215e6dd7d06a943bdac",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "1100",
+          "total_borrowed": "1000",
+          "collateral_units": "23640282548977",
+          "borrower_count": 1,
+          "vaults": [
+            {
+              "address": "0xd0dace70434ff7567b108b5a8c2a36c150c830fe",
+              "name": "Galaxy USDG Stock Tokens",
+              "kind": "vault_v2_adapter",
+              "allocation": "100",
+              "curator": "0xa13094eced689b7419baba12851374424c1486f1",
+              "owner": "0x42d510edeb9257f8d920d5b9f5109d95cb22419d"
+            }
+          ],
+          "other_supplied": "1000"
+        },
+        {
+          "id": "0xd621b5373890ce0be9b20ca17a75c57944e8dbb997172fd61e1ea48af63fad96",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "860000000000000000",
+          "total_supplied": "1001",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [
+            {
+              "address": "0x5fe15021a7c0ff4a9965b400e474f616451ba128",
+              "name": "Sharewoods RWA USDG",
+              "kind": "vault_v2_adapter",
+              "allocation": "0",
+              "curator": "0x374ba83b81167176450fef1a4f07a9ec1d21db54",
+              "owner": "0x6f75b9102435352235dd7f4e1acff4ea4d5f2631"
+            }
+          ],
+          "other_supplied": "1000"
+        },
+        {
+          "id": "0x0d6e009807341aae5d0ccc3fbdc506fce77012603e96aec3fc44785942e7cf65",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "2",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x63c71d3a1afd71c674be55f07a27ad783edf20d63372111ae5b2e7162963b7ac",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0xe3813a231ef3c073d21615ab0a8788ebfae23e95e7e5571880c7619d5b05f404",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "770000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x6641d1333a00edf42f79b931554f1c81971656f18d881245f9547b471d5a49fb",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "770000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x3b788195cc0f5eb987e14d91d9b8875cf742c55faf9822ae25701f71a3ed7133",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "385000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x349f46c4c49ff76074e27a21fe49fd86511b06c764a6d46589ced02a40dc40d2",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x47baa250d10b6969d3177dfac9b1235f1fb32e35a0d52609d438c800bf3f09da",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x516829adb04c8351c09747755eed21f4514370e2df11a73c89054fef7de316bc",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        },
+        {
+          "id": "0x3d9b0c04e374f7b50fa7a635393d2ecae23f45289e4e23f83793a6a611010918",
+          "loan_symbol": "USDG",
+          "loan_decimals": 6,
+          "lltv_wad": "625000000000000000",
+          "total_supplied": "0",
+          "total_borrowed": "0",
+          "collateral_units": "0",
+          "borrower_count": 0,
+          "vaults": [],
+          "other_supplied": "0"
+        }
+      ]
+    },
+    {
+      "symbol": "SPY",
+      "address": "0x117cc2133c37b721f49de2a7a74833232b3b4c0c",
+      "decimals": 18,
+      "price_usdg": "765547909",
+      "pools": [
+        {
+          "address": "0x62fde201c424d6d07730b77450dd73928ebac5f5",
+          "fee": 100,
+          "stock_is_token0": true
+        },
+        {
+          "address": "0xa7bb1ac63bbab0c44316e6c8c455213441689167",
+          "fee": 500,
+          "stock_is_token0": true
+        },
+        {
+          "address": "0xa43b424bc609495aed4bcd88d654934b510b0ad9",
+          "fee": 3000,
+          "stock_is_token0": true
+        }
+      ],
+      "sellable": [
+        "185330602767",
+        "192413470922",
+        "194579548036"
+      ],
+      "engine_sellable": [
+        "185330602767",
+        "192413470922",
+        "194579548036"
+      ],
+      "lent_units": "31381134590157542126",
+      "lent_usdg": "24220306000",
+      "sellable_at_lent_block": [
+        "238422500837",
+        "253942303246",
+        "256831750116"
+      ],
+      "markets": []
+    },
+    {
+      "symbol": "TSLA",
+      "address": "0x322f0929c4625ed5bad873c95208d54e1c003b2d",
+      "decimals": 18,
+      "price_usdg": "354599006",
+      "pools": [
+        {
+          "address": "0x7868622ff2c3b1b6c8acb15fe0bdaebf043dda48",
+          "fee": 100,
+          "stock_is_token0": true
+        },
+        {
+          "address": "0xc4f0172d6ac8dd294dd1137d047d5e1893760236",
+          "fee": 500,
+          "stock_is_token0": true
+        },
+        {
+          "address": "0xf4acdaeeb7022862a763c9b1b885e11191c889e3",
+          "fee": 3000,
+          "stock_is_token0": true
+        },
+        {
+          "address": "0xb349fb08c2712f3a70bad40a4d006b68d67e888b",
+          "fee": 10000,
+          "stock_is_token0": true
+        }
+      ],
+      "sellable": [
+        "129574154168",
+        "179596082763",
+        "206258068183"
+      ],
+      "engine_sellable": [
+        "129574154168",
+        "179596082763",
+        "206258068183"
+      ],
+      "lent_units": "39564638258737751660",
+      "lent_usdg": "14757740689",
+      "sellable_at_lent_block": [
+        "196487354676",
+        "293859255863",
+        "354016991674"
+      ],
+      "markets": []
+    },
+    {
+      "symbol": "MSFT",
+      "address": "0xe93237c50d904957cf27e7b1133b510c669c2e74",
+      "decimals": 18,
+      "price_usdg": "514509178",
+      "pools": [
+        {
+          "address": "0x3d69ea64810300877b938e9ad9916c25912c08f5",
+          "fee": 100,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0x38fa8bf13a6b2ac49be77babb22c1837d1e505f9",
+          "fee": 500,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0xeb60bcd1d920ad6e102690ccfc6fb488899e1510",
+          "fee": 3000,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0x2ea9292113514ed84fd16aa4ad1e416537e39c8c",
+          "fee": 10000,
+          "stock_is_token0": false
+        }
+      ],
+      "sellable": [
+        "340216243583",
+        "419339039139",
+        "448372242309"
+      ],
+      "engine_sellable": [
+        "340216243583",
+        "419339039139",
+        "448372242309"
+      ],
+      "lent_units": "8377354773033862785",
+      "lent_usdg": "4335815701",
+      "sellable_at_lent_block": [
+        "383906652376",
+        "492429888109",
+        "536092533371"
+      ],
+      "markets": []
+    },
+    {
+      "symbol": "QQQ",
+      "address": "0xd5f3879160bc7c32ebb4dc785f8a4f505888de68",
+      "decimals": 18,
+      "price_usdg": "743442679",
+      "pools": [
+        {
+          "address": "0x4539019b527211998642fec342c85dcb44c7e5e4",
+          "fee": 100,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0xd60a5d14db690b7afad71f76b108071d7175597d",
+          "fee": 500,
+          "stock_is_token0": false
+        },
+        {
+          "address": "0xebd78dcfc8a6b3a696f1e191ad1ff321f9579f79",
+          "fee": 3000,
+          "stock_is_token0": false
+        }
+      ],
+      "sellable": [
+        "373920687052",
+        "523478642710",
+        "570971091488"
+      ],
+      "engine_sellable": [
+        "373920687052",
+        "523478642710",
+        "570971091488"
+      ],
+      "lent_units": "1234448631005993085",
+      "lent_usdg": "920536618",
+      "sellable_at_lent_block": [
+        "444685984452",
+        "623893615235",
+        "692008252269"
+      ],
+      "markets": []
+    }
+  ],
+  "lenders": {
+    "holders_checked": 273,
+    "protocols": [
+      {
+        "name": "Morpho Blue (canonical)",
+        "source": "morpho-org/sdks; Longbow and Robinhood Earn markets live here",
+        "holders_checked": 1,
+        "value_usdg": "608885097580",
+        "by_stock": {
+          "AAPL": "300690887091",
+          "MSFT": "434598439",
+          "NVDA": "298762291406",
+          "SPY": "8965879737",
+          "TSLA": "31440907"
+        }
+      },
+      {
+        "name": "Denar (Morpho Blue instance)",
+        "source": "Denar docs",
+        "holders_checked": 1,
+        "value_usdg": "2056231890",
+        "by_stock": {
+          "AAPL": "500696288",
+          "MSFT": "268922734",
+          "NVDA": "396387234",
+          "QQQ": "37364369",
+          "SPY": "77181110",
+          "TSLA": "775680155"
+        }
+      },
+      {
+        "name": "LayerBank V3",
+        "source": "DefiLlama-Adapters projects/lineabank (Aave V3 pool data provider)",
+        "holders_checked": 2,
+        "value_usdg": "83675675",
+        "by_stock": {
+          "NVDA": "45085124",
+          "SPY": "38590551"
+        }
+      },
+      {
+        "name": "Ripe",
+        "source": "api.ripe.finance/api/chains/addresses (VaultBook, StabilityPool, Endaoment)",
+        "holders_checked": 6,
+        "value_usdg": "8330299074",
+        "by_stock": {
+          "AAPL": "115948809",
+          "MSFT": "61929865",
+          "NVDA": "8127415598",
+          "TSLA": "25004802"
+        }
+      },
+      {
+        "name": "Gage",
+        "source": "docs.gage.cash/protocol/addresses via DefiLlama-Adapters projects/gage/universe.json",
+        "holders_checked": 26,
+        "value_usdg": "15262781823",
+        "by_stock": {
+          "AAPL": "131706907",
+          "NVDA": "787821845",
+          "SPY": "14343253071"
+        }
+      },
+      {
+        "name": "Turret",
+        "source": "DefiLlama-Adapters projects/turret/config.js",
+        "holders_checked": 72,
+        "value_usdg": "0",
+        "by_stock": {}
+      },
+      {
+        "name": "Arcadia V2",
+        "source": "DefiLlama-Adapters projects/arcadia-finance-v2 (account factory)",
+        "holders_checked": 120,
+        "value_usdg": "9017628",
+        "by_stock": {
+          "AAPL": "0",
+          "QQQ": "62",
+          "SPY": "12959",
+          "TSLA": "9004607"
+        }
+      },
+      {
+        "name": "TermMax",
+        "source": "DefiLlama-Adapters projects/term-structure (FactoryV2 with deploy blocks)",
+        "holders_checked": 44,
+        "value_usdg": "2703053713",
+        "by_stock": {
+          "NVDA": "1024492954",
+          "QQQ": "883172187",
+          "SPY": "795388572"
+        }
+      },
+      {
+        "name": "Native Credit Pool",
+        "source": "DefiLlama-Adapters projects/native-lend",
+        "holders_checked": 1,
+        "value_usdg": "22289844866",
+        "by_stock": {
+          "MSFT": "3570364663",
+          "NVDA": "4802869985",
+          "TSLA": "13916610218"
+        }
+      }
+    ],
+    "not_covered": [
+      "Uniswap V3/V4 LP positions used as collateral (Arcadia accounts, Gage vaults and loan accounts hold position NFTs): the stock inside sits in the pool, not in the lender, so balanceOf does not see it and pool depth already includes it. Liquidating such a position withdraws that liquidity. DefiLlama unwraps these, which is why its Arcadia and Gage stock figures are higher.",
+      "Zona, Oter Finance, Kyros Finance: lending protocols listed on DefiLlama for Robinhood Chain whose adapter source is not public; no contract addresses found. DefiLlama showed under $30 of these stocks across all three on Sep 27, 2026.",
+      "Spine Finance: collateral is PT-NVDA-15OCT2026 (Pendle), not the NVDA token.",
+      "Uniswap V4 hooks, CEX and bridge custody are not lending contracts and are not counted."
+    ]
+  },
+  "notes": [
+    "This file was composed from separate measured runs. Each section carries the block it was measured at, listed under sources. Use Check live for the current depth.",
+    "Holdings and the depth they are compared against in the headline come from the same run, so that comparison is at one block. The sellable columns are from the newer depth run and are labelled with their own block.",
+    "Uniswap V4 pools are not counted, so sellable depth is a lower bound.",
+    "Sellable totals assume each pool is sold into up to the bound at the same time.",
+    "Borrowers are a count only. This file never names an individual."
+  ]
+}
